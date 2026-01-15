@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#4d0025" stroke="#f8dae2" stroke-width="3"/>
+  <circle cx="100" cy="100" r="75" fill="#920b4c"/>
+  <text x="100" y="85" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#fcfbf9" font-weight="bold">PEONY HQ KENYA</text>
+  <text x="100" y="125" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#f8dae2" font-style="italic">Jewellery</text>
+</svg>
