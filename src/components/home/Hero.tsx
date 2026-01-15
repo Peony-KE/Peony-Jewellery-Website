@@ -4,21 +4,18 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Hero() {
-  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-    };
-
-    checkDarkMode();
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', checkDarkMode);
-
-    return () => mediaQuery.removeEventListener('change', checkDarkMode);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
   }, []);
+
+  const isDark = mounted ? resolvedTheme === 'dark' : false;
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
@@ -77,20 +74,20 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Image/Logo Section */}
+          {/* Image/Logo Section - increased logo size */}
           <div className="relative flex justify-center lg:justify-end">
-            <div className="relative w-80 h-80 sm:w-96 sm:h-96 lg:w-[450px] lg:h-[450px]">
+            <div className="relative w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] lg:w-[500px] lg:h-[500px]">
               {/* Decorative ring */}
               <div className="absolute inset-0 border-2 border-primary/20 rounded-full animate-pulse" />
               <div className="absolute inset-4 border border-accent rounded-full" />
               
-              {/* Logo */}
-              <div className="absolute inset-8 flex items-center justify-center">
+              {/* Logo - larger size */}
+              <div className="absolute inset-6 flex items-center justify-center">
                 <Image
                   src={isDark ? '/logo-dark.svg' : '/logo-light.svg'}
                   alt="Peony HQ Kenya"
-                  width={350}
-                  height={350}
+                  width={450}
+                  height={450}
                   className="object-contain drop-shadow-2xl"
                   priority
                 />

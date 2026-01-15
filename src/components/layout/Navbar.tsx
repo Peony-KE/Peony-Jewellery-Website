@@ -3,36 +3,29 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Heart, Menu, X, Search } from 'lucide-react';
+import { ShoppingCart, Heart, Menu, X, Search, Sun, Moon } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { getCartCount } = useCart();
   const { getWishlistCount } = useWishlist();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
-    const checkDarkMode = () => {
-      setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-    };
-
     window.addEventListener('scroll', handleScroll);
-    checkDarkMode();
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', checkDarkMode);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      mediaQuery.removeEventListener('change', checkDarkMode);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navLinks = [
@@ -41,6 +34,9 @@ export default function Navbar() {
     { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
   ];
+
+  // Prevent hydration mismatch by not rendering theme-dependent content until mounted
+  const isDark = mounted ? resolvedTheme === 'dark' : false;
 
   return (
     <nav
@@ -51,15 +47,15 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
+        <div className="flex items-center justify-between h-24">
+          {/* Logo - increased size */}
           <Link href="/" className="flex-shrink-0">
             <Image
               src={isDark ? '/logo-dark.svg' : '/logo-light.svg'}
               alt="Peony HQ Kenya"
-              width={70}
-              height={70}
-              className="h-16 w-auto"
+              width={90}
+              height={90}
+              className="h-20 w-auto"
               priority
             />
           </Link>
@@ -78,7 +74,18 @@ export default function Navbar() {
           </div>
 
           {/* Right side icons */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            {/* Theme Toggle */}
+            {mounted && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-foreground hover:text-primary transition-colors rounded-full hover:bg-muted"
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? <Sun size={22} /> : <Moon size={22} />}
+              </button>
+            )}
+
             {/* Search - hidden on mobile */}
             <button
               className="hidden sm:flex p-2 text-foreground hover:text-primary transition-colors"

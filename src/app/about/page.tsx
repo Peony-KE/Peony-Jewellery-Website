@@ -5,21 +5,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Sparkles, Users, Award } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AboutPage() {
-  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-    };
-
-    checkDarkMode();
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', checkDarkMode);
-
-    return () => mediaQuery.removeEventListener('change', checkDarkMode);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
   }, []);
+
+  const isDark = mounted ? resolvedTheme === 'dark' : false;
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,14 +41,15 @@ export default function AboutPage() {
               </Link>
             </div>
             <div className="flex justify-center">
-              <div className="relative w-80 h-80">
+              {/* Larger logo container */}
+              <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px]">
                 <div className="absolute inset-0 bg-accent rounded-full" />
                 <div className="absolute inset-4 flex items-center justify-center">
                   <Image
                     src={isDark ? '/logo-dark.svg' : '/logo-light.svg'}
                     alt="Peony HQ Kenya"
-                    width={280}
-                    height={280}
+                    width={340}
+                    height={340}
                     className="object-contain"
                   />
                 </div>

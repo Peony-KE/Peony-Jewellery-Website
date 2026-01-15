@@ -4,39 +4,32 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Footer() {
-  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
-    };
-
-    checkDarkMode();
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery.addEventListener('change', checkDarkMode);
-
-    return () => {
-      mediaQuery.removeEventListener('change', checkDarkMode);
-    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
   }, []);
 
   const currentYear = new Date().getFullYear();
+  const isDark = mounted ? resolvedTheme === 'dark' : false;
 
   return (
     <footer className="bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand Column */}
+          {/* Brand Column - increased logo size */}
           <div className="space-y-4">
             <Image
               src={isDark ? '/logo-dark.svg' : '/logo-light.svg'}
               alt="Peony HQ Kenya"
-              width={80}
-              height={80}
-              className="h-20 w-auto"
+              width={100}
+              height={100}
+              className="h-24 w-auto"
             />
             <p className="text-muted-foreground text-sm leading-relaxed">
               Discover beautiful, handcrafted jewellery that tells your unique story. 

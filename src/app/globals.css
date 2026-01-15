@@ -14,9 +14,25 @@
   --card-foreground: #000000;
 }
 
+/* Dark mode via class (toggle) - use higher specificity */
+html.dark,
+html.dark body,
+.dark {
+  --background: #4d0025;
+  --foreground: #fcfbf9;
+  --primary: #f8dae2;
+  --accent: #920b4c;
+  --accent-foreground: #fcfbf9;
+  --muted: #920b4c;
+  --muted-foreground: #d4a5b5;
+  --border: #6b0035;
+  --card: #5a002d;
+  --card-foreground: #fcfbf9;
+}
+
+/* Also support system preference as fallback when no class is set */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark Mode - Peony Brand Colors */
+  html:not(.light):not(.dark) {
     --background: #4d0025;
     --foreground: #fcfbf9;
     --primary: #f8dae2;
@@ -45,8 +61,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
+html, body {
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
