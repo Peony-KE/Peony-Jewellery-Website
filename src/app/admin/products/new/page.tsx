@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ProductInsert } from '@/types/database';
 
@@ -45,7 +45,7 @@ export default function NewProductPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.from('products').insert([formData as ProductInsert]);
+      const { error } = await supabase.from('products').insert([formData]);
 
       if (error) throw error;
 

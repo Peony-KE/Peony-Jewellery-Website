@@ -9,7 +9,7 @@ export async function createOrder(orderData: OrderInsert) {
     
     const { data, error } = await supabase
       .from('orders')
-      .insert([orderData as OrderInsert])
+      .insert([orderData])
       .select()
       .single();
 
@@ -31,7 +31,7 @@ export async function createContactMessage(messageData: ContactMessageInsert) {
     
     const { data, error } = await supabase
       .from('contact_messages')
-      .insert([messageData as ContactMessageInsert])
+      .insert([messageData])
       .select()
       .single();
 

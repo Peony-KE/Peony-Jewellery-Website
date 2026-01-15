@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { Product, ProductUpdate } from '@/types/database';
+import { ProductUpdate } from '@/types/database';
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -84,7 +84,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     try {
       const { error } = await supabase
         .from('products')
-        .update(formData as ProductUpdate)
+        .update(formData)
         .eq('id', id);
 
       if (error) throw error;
