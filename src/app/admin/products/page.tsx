@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Pencil, Trash2, Search, AlertCircle, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, AlertCircle, Package, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Product } from '@/types/database';
 
@@ -207,15 +207,23 @@ export default function AdminProductsPage() {
                       <span className="font-medium text-[#fcfbf9]">{formatPrice(product.price)}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          product.in_stock
-                            ? 'bg-green-900/50 text-green-300'
-                            : 'bg-red-900/50 text-red-300'
-                        }`}
-                      >
-                        {product.in_stock ? 'In Stock' : 'Out of Stock'}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            product.in_stock
+                              ? 'bg-green-900/50 text-green-300'
+                              : 'bg-red-900/50 text-red-300'
+                          }`}
+                        >
+                          {product.in_stock ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                        {product.featured && (
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-900/50 text-yellow-300 flex items-center">
+                            <Star size={12} className="mr-1" />
+                            Featured
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end space-x-2">

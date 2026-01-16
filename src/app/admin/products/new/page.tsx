@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, X, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ProductInsert } from '@/types/database';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -17,8 +18,11 @@ export default function NewProductPage() {
     price: 0,
     category: 'earrings',
     image: '',
+    images: [],
     in_stock: true,
+    featured: false,
   });
+  const [newImageUrl, setNewImageUrl] = useState('');
   const supabase = createClient();
 
   const handleInputChange = (
@@ -39,9 +43,45 @@ export default function NewProductPage() {
     }));
   };
 
+  const handleMainImageUpload = (url: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      image: url,
+    }));
+  };
+
+  const addAdditionalImage = (url: string) => {
+    if (url.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), url.trim()],
+      }));
+    }
+  };
+
+  const addImageUrl = () => {
+    if (newImageUrl.trim()) {
+      addAdditionalImage(newImageUrl);
+      setNewImageUrl('');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.image) {
+      setError('Please add a main product image');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -154,55 +194,101 @@ export default function NewProductPage() {
             </div>
           </div>
 
-          {/* Image URL */}
+          {/* Main Image Upload */}
+          <ImageUpload
+            label="Main Product Image *"
+            currentImage={formData.image}
+            onImageUploaded={handleMainImageUpload}
+          />
+
+          {/* Additional Images */}
           <div>
-            <label htmlFor="image" className="block text-sm font-medium text-[#f8dae2] mb-1">
-              Image URL *
+            <label className="block text-sm font-medium text-[#f8dae2] mb-1">
+              Additional Images (for carousel)
             </label>
-            <div className="flex gap-4">
+            <div className="flex gap-2 mb-2">
               <input
                 type="url"
-                id="image"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                required
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
                 className="flex-1 px-4 py-2 bg-[#4d0025] border border-[#920b4c] rounded-lg focus:ring-2 focus:ring-[#f8dae2] focus:border-transparent text-[#fcfbf9] placeholder-[#f8dae2]/50"
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image2.jpg"
               />
-              {formData.image && (
-                <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#4d0025] flex-shrink-0 border border-[#920b4c]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={formData.image}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={addImageUrl}
+                disabled={!newImageUrl.trim()}
+                className="px-4 py-2 bg-[#920b4c] text-[#fcfbf9] rounded-lg hover:bg-[#a80d58] transition-colors disabled:opacity-50 flex items-center"
+              >
+                <Plus size={20} />
+              </button>
             </div>
+            
+            {/* Image thumbnails */}
+            {formData.images && formData.images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {formData.images.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-[#4d0025] border border-[#920b4c]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img}
+                        alt={`Additional ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="text-xs text-[#f8dae2]/70 mt-1">
-              Use a direct link to an image. Tip: Use Unsplash for free stock photos.
+              Add additional images for the product carousel. These will show after the main image.
             </p>
           </div>
 
-          {/* In Stock */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="in_stock"
-              name="in_stock"
-              checked={formData.in_stock}
-              onChange={handleCheckboxChange}
-              className="w-4 h-4 text-[#920b4c] bg-[#4d0025] border-[#920b4c] rounded focus:ring-[#f8dae2]"
-            />
-            <label htmlFor="in_stock" className="ml-2 text-sm font-medium text-[#f8dae2]">
-              In Stock
-            </label>
+          {/* Stock & Featured */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center p-3 bg-[#4d0025] rounded-lg border border-[#920b4c]">
+              <input
+                type="checkbox"
+                id="in_stock"
+                name="in_stock"
+                checked={formData.in_stock}
+                onChange={handleCheckboxChange}
+                className="w-4 h-4 text-[#920b4c] bg-[#4d0025] border-[#920b4c] rounded focus:ring-[#f8dae2]"
+              />
+              <label htmlFor="in_stock" className="ml-2 text-sm font-medium text-[#f8dae2]">
+                In Stock
+              </label>
+            </div>
+            <div className="flex items-center p-3 bg-[#4d0025] rounded-lg border border-[#920b4c]">
+              <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleCheckboxChange}
+                className="w-4 h-4 text-[#920b4c] bg-[#4d0025] border-[#920b4c] rounded focus:ring-[#f8dae2]"
+              />
+              <label htmlFor="featured" className="ml-2 text-sm font-medium text-[#f8dae2] flex items-center">
+                <Star size={16} className="mr-1 text-yellow-500" />
+                Featured Product
+              </label>
+            </div>
           </div>
+          <p className="text-xs text-[#f8dae2]/70 -mt-4">
+            Featured products appear on the homepage in the &quot;Featured Collection&quot; section.
+          </p>
         </div>
 
         {/* Actions */}

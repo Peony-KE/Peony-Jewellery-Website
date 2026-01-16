@@ -245,7 +245,9 @@ export const mapSupabaseProduct = (dbProduct: {
   price: number;
   category: string;
   image: string;
+  images?: string[] | null;
   in_stock: boolean;
+  featured?: boolean;
   created_at: string;
 }): Product => ({
   id: dbProduct.id,
@@ -254,5 +256,7 @@ export const mapSupabaseProduct = (dbProduct: {
   price: dbProduct.price,
   category: dbProduct.category as Category,
   image: dbProduct.image,
+  images: dbProduct.images || [],
   inStock: dbProduct.in_stock,
+  featured: dbProduct.featured || false,
 });

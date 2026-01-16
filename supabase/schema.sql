@@ -12,7 +12,22 @@ CREATE TABLE IF NOT EXISTS products (
   price INTEGER NOT NULL,
   category TEXT NOT NULL CHECK (category IN ('earrings', 'necklaces', 'rings', 'bracelets')),
   image TEXT NOT NULL,
+  images JSONB DEFAULT '[]'::jsonb,
   in_stock BOOLEAN DEFAULT true,
+  featured BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title TEXT,
+  review_text TEXT NOT NULL,
+  verified_purchase BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -50,6 +65,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 -- Products: Anyone can read, only authenticated users can modify
 CREATE POLICY "Products are viewable by everyone" ON products
@@ -63,6 +79,22 @@ CREATE POLICY "Products are updatable by authenticated users only" ON products
 
 CREATE POLICY "Products are deletable by authenticated users only" ON products
   FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Reviews: Anyone can read and insert reviews, only authenticated users can delete
+CREATE POLICY "Reviews are viewable by everyone" ON reviews
+  FOR SELECT 
+  TO anon, authenticated
+  USING (true);
+
+CREATE POLICY "Reviews are insertable by everyone" ON reviews
+  FOR INSERT 
+  TO anon, authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Reviews are deletable by authenticated users only" ON reviews
+  FOR DELETE 
+  TO authenticated
+  USING (true);
 
 -- Orders: Anyone (including anonymous) can insert, only authenticated users can view/modify
 CREATE POLICY "Allow public order inserts" ON orders
@@ -143,6 +175,8 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_contact_messages_read ON contact_messages(read);
 CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_newsletter_subscribers_email ON newsletter_subscribers(email);
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
 
 -- Insert sample products (optional - you can remove this if you want to start fresh)
 INSERT INTO products (name, description, price, category, image, in_stock) VALUES

@@ -17,7 +17,9 @@ export type Database = {
           price: number;
           category: 'earrings' | 'necklaces' | 'rings' | 'bracelets';
           image: string;
+          images: string[];
           in_stock: boolean;
+          featured: boolean;
           created_at: string;
         };
         Insert: {
@@ -27,7 +29,9 @@ export type Database = {
           price: number;
           category: 'earrings' | 'necklaces' | 'rings' | 'bracelets';
           image: string;
+          images?: string[];
           in_stock?: boolean;
+          featured?: boolean;
           created_at?: string;
         };
         Update: {
@@ -37,7 +41,9 @@ export type Database = {
           price?: number;
           category?: 'earrings' | 'necklaces' | 'rings' | 'bracelets';
           image?: string;
+          images?: string[];
           in_stock?: boolean;
+          featured?: boolean;
           created_at?: string;
         };
       };
@@ -137,6 +143,41 @@ export type Database = {
           is_active?: boolean;
         };
       };
+      reviews: {
+        Row: {
+          id: string;
+          product_id: string;
+          customer_name: string;
+          customer_email: string;
+          rating: number;
+          title: string | null;
+          review_text: string;
+          verified_purchase: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          customer_name: string;
+          customer_email: string;
+          rating: number;
+          title?: string | null;
+          review_text: string;
+          verified_purchase?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          product_id?: string;
+          customer_name?: string;
+          customer_email?: string;
+          rating?: number;
+          title?: string | null;
+          review_text?: string;
+          verified_purchase?: boolean;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -166,3 +207,7 @@ export type ContactMessageUpdate = Database['public']['Tables']['contact_message
 export type NewsletterSubscriber = Database['public']['Tables']['newsletter_subscribers']['Row'];
 export type NewsletterSubscriberInsert = Database['public']['Tables']['newsletter_subscribers']['Insert'];
 export type NewsletterSubscriberUpdate = Database['public']['Tables']['newsletter_subscribers']['Update'];
+
+export type Review = Database['public']['Tables']['reviews']['Row'];
+export type ReviewInsert = Database['public']['Tables']['reviews']['Insert'];
+export type ReviewUpdate = Database['public']['Tables']['reviews']['Update'];

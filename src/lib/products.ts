@@ -81,13 +81,14 @@ export async function getProductById(id: string): Promise<Product | null> {
   }
 }
 
-// Fetch featured products (first 4 in stock)
+// Fetch featured products (products marked as featured and in stock)
 export async function getFeaturedProducts(): Promise<Product[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('products')
       .select('*')
+      .eq('featured', true)
       .eq('in_stock', true)
       .limit(4)
       .order('created_at', { ascending: false });
@@ -98,6 +99,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     }
 
     if (!data || data.length === 0) {
+      // If no featured products, fall back to static or return empty
       return staticProducts.filter(p => p.featured).slice(0, 4);
     }
 

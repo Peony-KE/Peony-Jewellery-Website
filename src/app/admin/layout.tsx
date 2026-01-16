@@ -9,6 +9,7 @@ import {
   ShoppingCart, 
   MessageSquare, 
   Mail,
+  Star,
   LogOut,
   Menu,
   X,
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+  { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
 ];

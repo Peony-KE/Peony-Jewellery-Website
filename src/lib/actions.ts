@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { OrderInsert, ContactMessageInsert, NewsletterSubscriberInsert } from '@/types/database';
+import { OrderInsert, ContactMessageInsert, NewsletterSubscriberInsert, ReviewInsert, Review } from '@/types/database';
 
 export async function createOrder(orderData: OrderInsert) {
   try {
@@ -92,5 +92,49 @@ export async function subscribeToNewsletter(subscriberData: NewsletterSubscriber
   } catch (error) {
     console.error('Error subscribing to newsletter:', error);
     return { success: false, error: 'Failed to subscribe' };
+  }
+}
+
+export async function createReview(reviewData: ReviewInsert) {
+  try {
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert([reviewData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating review:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error creating review:', error);
+    return { success: false, error: 'Failed to submit review' };
+  }
+}
+
+export async function getProductReviews(productId: string): Promise<{ success: boolean; data?: Review[]; error?: string }> {
+  try {
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching reviews:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return { success: false, error: 'Failed to fetch reviews' };
   }
 }
