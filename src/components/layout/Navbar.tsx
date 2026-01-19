@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Heart, Menu, X, Search, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Heart, Menu, X, Search, Sun, Moon, User, LogOut } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,6 +16,8 @@ export default function Navbar() {
   const { getCartCount } = useCart();
   const { getWishlistCount } = useWishlist();
   const { resolvedTheme, toggleTheme } = useTheme();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -121,6 +124,65 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
+            {/* Account / Login */}
+            {!authLoading && (
+              <>
+                {user ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                      className="p-2 text-foreground hover:text-primary transition-colors rounded-full hover:bg-muted"
+                      aria-label="Account"
+                    >
+                      <User size={22} />
+                    </button>
+                    {isAccountMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-lg py-2 z-50">
+                          <Link
+                            href="/account"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                          >
+                            My Account
+                          </Link>
+                          <Link
+                            href="/account/orders"
+                            onClick={() => setIsAccountMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                          >
+                            Orders
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              await signOut();
+                              setIsAccountMenuOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center space-x-2"
+                          >
+                            <LogOut size={16} />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href="/account/login"
+                    className="p-2 text-foreground hover:text-primary transition-colors rounded-full hover:bg-muted"
+                    aria-label="Login"
+                  >
+                    <User size={22} />
+                  </Link>
+                )}
+              </>
+            )}
 
             {/* Mobile menu button */}
             <button
