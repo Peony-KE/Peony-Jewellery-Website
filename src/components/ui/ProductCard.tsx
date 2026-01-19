@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingCart, Eye } from 'lucide-react';
 import { Product } from '@/types';
 import { formatPrice } from '@/data/products';
@@ -14,6 +15,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
   const { addToCart, isInCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
@@ -31,11 +33,22 @@ export default function ProductCard({ product }: ProductCardProps) {
     toggleWishlist(product);
   };
 
+  const handleImageClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or links inside
+    const target = e.target as HTMLElement;
+    if (target.closest('button, a')) {
+      return;
+    }
+    router.push(`/product/${product.id}`);
+  };
+
   return (
     <div className="group relative bg-card rounded-2xl overflow-hidden card-hover border border-border">
       {/* Image Container */}
-      <Link href={`/product/${product.id}`} className="block">
-        <div className="relative aspect-square img-zoom bg-muted">
+      <div 
+        className="relative aspect-square img-zoom bg-muted cursor-pointer"
+        onClick={handleImageClick}
+      >
           <Image
             src={product.image}
             alt={product.name}
@@ -99,7 +112,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
         </div>
-      </Link>
 
       {/* Product Info */}
       <div className="p-4">

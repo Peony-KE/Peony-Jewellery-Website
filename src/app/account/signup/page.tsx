@@ -19,9 +19,12 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowConfirmationMessage(false);
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -38,8 +41,13 @@ export default function SignupPage() {
     const result = await signUp(email, password, firstName || undefined, lastName || undefined);
 
     if (result.success) {
-      router.push('/account');
-      router.refresh();
+      if (result.needsConfirmation) {
+        setShowConfirmationMessage(true);
+        setIsLoading(false);
+      } else {
+        router.push('/account');
+        router.refresh();
+      }
     } else {
       setError(result.error || 'Failed to create account. Please try again.');
       setIsLoading(false);
@@ -57,6 +65,17 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+          {showConfirmationMessage && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
+              <p className="text-blue-700 dark:text-blue-300 text-sm font-medium mb-2">
+                Check your email!
+              </p>
+              <p className="text-blue-600 dark:text-blue-400 text-sm">
+                We&apos;ve sent a confirmation email to <strong>{email}</strong>. Please click the link in the email to verify your account before signing in.
+              </p>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg flex items-start space-x-3">
               <AlertCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />

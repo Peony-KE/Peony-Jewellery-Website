@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import Button from '@/components/ui/Button';
-import { useTheme } from '@/contexts/ThemeContext';
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import Button from "@/components/ui/Button";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
@@ -15,13 +15,13 @@ export default function Hero() {
     setMounted(true);
   }, []);
 
-  const isDark = mounted ? resolvedTheme === 'dark' : false;
+  const isDark = mounted ? resolvedTheme === "dark" : false;
 
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent/30 via-background to-background" />
-      
+
       {/* Decorative Circles */}
       <div className="absolute top-20 right-10 w-64 h-64 bg-accent/40 rounded-full blur-3xl" />
       <div className="absolute bottom-20 left-10 w-48 h-48 bg-primary/10 rounded-full blur-2xl" />
@@ -39,16 +39,15 @@ export default function Hero() {
                 <span className="text-primary block">Perfect Jewellery</span>
               </h1>
               <p className="text-muted-foreground text-lg max-w-lg mx-auto lg:mx-0">
-                Explore our curated collection of elegant earrings, necklaces, rings, and bracelets. 
-                Each piece is designed to make you feel beautiful and confident.
+                Explore our curated collection of elegant earrings, necklaces,
+                rings, and bracelets. Each piece is designed to make you feel
+                beautiful and confident.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link href="/shop">
-                <Button size="lg">
-                  Shop Collection
-                </Button>
+                <Button size="lg">Shop Collection</Button>
               </Link>
               <Link href="/about">
                 <Button variant="outline" size="lg">
@@ -80,11 +79,11 @@ export default function Hero() {
               {/* Decorative ring */}
               <div className="absolute inset-0 border-2 border-primary/20 rounded-full animate-pulse" />
               <div className="absolute inset-4 border border-accent rounded-full" />
-              
+
               {/* Logo - larger size */}
               <div className="absolute inset-6 flex items-center justify-center">
                 <Image
-                  src={isDark ? '/logo-dark.svg' : '/logo-light.svg'}
+                  src={isDark ? "/logo-dark.svg" : "/logo-light.svg"}
                   alt="Peony HQ Kenya"
                   width={450}
                   height={450}
@@ -95,7 +94,11 @@ export default function Hero() {
 
               {/* Floating elements */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-accent rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-primary font-bold text-sm text-center leading-tight">New<br/>Arrivals</span>
+                <span className="text-primary font-bold text-sm text-center leading-tight">
+                  New
+                  <br />
+                  Arrivals
+                </span>
               </div>
             </div>
           </div>

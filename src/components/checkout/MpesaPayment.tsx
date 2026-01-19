@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Loader2, Smartphone, ArrowLeft } from 'lucide-react';
-import { formatPrice } from '@/data/products';
-import Button from '@/components/ui/Button';
+import React, { useState } from "react";
+import { Loader2, Smartphone, ArrowLeft } from "lucide-react";
+import { formatPrice } from "@/data/products";
+import Button from "@/components/ui/Button";
 
 interface MpesaPaymentProps {
   amount: number;
@@ -11,22 +11,28 @@ interface MpesaPaymentProps {
   onBack: () => void;
 }
 
-export default function MpesaPayment({ amount, onSuccess, onBack }: MpesaPaymentProps) {
-  const [phoneNumber, setPhoneNumber] = useState('');
+export default function MpesaPayment({
+  amount,
+  onSuccess,
+  onBack,
+}: MpesaPaymentProps) {
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<
+    "idle" | "pending" | "success" | "error"
+  >("idle");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    setStatus('pending');
+    setStatus("pending");
 
     // Simulate M-Pesa STK Push
     // In production, this would call your backend which integrates with Safaricom Daraja API
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Simulate success (in production, you'd poll for the transaction status)
-    setStatus('success');
+    setStatus("success");
     setIsProcessing(false);
 
     // Wait a moment before redirecting
@@ -37,13 +43,13 @@ export default function MpesaPayment({ amount, onSuccess, onBack }: MpesaPayment
 
   const formatPhoneNumber = (value: string) => {
     // Remove non-digits
-    const digits = value.replace(/\D/g, '');
+    const digits = value.replace(/\D/g, "");
     // Format as Kenyan phone number
-    if (digits.startsWith('254')) {
+    if (digits.startsWith("254")) {
       return digits.slice(0, 12);
-    } else if (digits.startsWith('0')) {
+    } else if (digits.startsWith("0")) {
       return digits.slice(0, 10);
-    } else if (digits.startsWith('7') || digits.startsWith('1')) {
+    } else if (digits.startsWith("7") || digits.startsWith("1")) {
       return digits.slice(0, 9);
     }
     return digits.slice(0, 10);
@@ -56,36 +62,63 @@ export default function MpesaPayment({ amount, onSuccess, onBack }: MpesaPayment
           <Smartphone className="text-white" size={24} />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">M-Pesa Payment</h3>
-          <p className="text-sm text-muted-foreground">You will receive an STK push on your phone</p>
+          <h3 className="text-lg font-semibold text-foreground">
+            M-Pesa Payment
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            You will receive an STK push on your phone
+          </p>
         </div>
       </div>
 
-      {status === 'success' ? (
+      {status === "success" ? (
         <div className="text-center py-8">
           <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-8 h-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
-          <h4 className="text-lg font-semibold text-foreground mb-2">Payment Successful!</h4>
-          <p className="text-muted-foreground">Redirecting to confirmation...</p>
+          <h4 className="text-lg font-semibold text-foreground mb-2">
+            Payment Successful!
+          </h4>
+          <p className="text-muted-foreground">
+            Redirecting to confirmation...
+          </p>
         </div>
-      ) : status === 'pending' ? (
+      ) : status === "pending" ? (
         <div className="text-center py-8">
           <Loader2 className="w-12 h-12 mx-auto text-primary animate-spin mb-4" />
-          <h4 className="text-lg font-semibold text-foreground mb-2">Waiting for Payment</h4>
+          <h4 className="text-lg font-semibold text-foreground mb-2">
+            Waiting for Payment
+          </h4>
           <p className="text-muted-foreground mb-4">
-            Please check your phone and enter your M-Pesa PIN to complete the payment.
+            Please check your phone and enter your M-Pesa PIN to complete the
+            payment.
           </p>
           <p className="text-sm text-muted-foreground">
-            Amount: <span className="font-semibold text-foreground">{formatPrice(amount + 300)}</span>
+            Amount:{" "}
+            <span className="font-semibold text-foreground">
+              {formatPrice(amount + 300)}
+            </span>
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="mpesaPhone" className="block text-sm font-medium text-foreground mb-2">
+            <label
+              htmlFor="mpesaPhone"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               M-Pesa Phone Number *
             </label>
             <div className="relative">
@@ -96,7 +129,9 @@ export default function MpesaPayment({ amount, onSuccess, onBack }: MpesaPayment
                 type="tel"
                 id="mpesaPhone"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                onChange={(e) =>
+                  setPhoneNumber(formatPhoneNumber(e.target.value))
+                }
                 placeholder="712 345 678"
                 required
                 className="w-full pl-16 pr-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -117,8 +152,12 @@ export default function MpesaPayment({ amount, onSuccess, onBack }: MpesaPayment
               <span className="text-foreground">KES 300</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-border">
-              <span className="font-semibold text-foreground">Total to Pay</span>
-              <span className="font-bold text-primary">{formatPrice(amount + 300)}</span>
+              <span className="font-semibold text-foreground">
+                Total to Pay
+              </span>
+              <span className="font-bold text-primary">
+                {formatPrice(amount + 300)}
+              </span>
             </div>
           </div>
 
