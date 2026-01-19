@@ -7,9 +7,16 @@ export async function createOrder(orderData: OrderInsert) {
   try {
     const supabase = await createClient();
     
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const orderWithUserId = {
+      ...orderData,
+      user_id: user?.id || null,
+    };
+    
     const { data, error } = await supabase
       .from('orders')
-      .insert([orderData])
+      .insert([orderWithUserId])
       .select()
       .single();
 

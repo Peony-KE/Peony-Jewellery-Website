@@ -51,3 +51,29 @@ export interface CategoryInfo {
   description: string;
   image: string;
 }
+
+// User Account Types
+export interface User {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export interface Address {
+  id: string;
+  address: string;
+  city: string;
+  postalCode?: string;
+  country: string;
+  isDefault: boolean;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: 'mpesa' | 'card';
+  lastFour?: string;
+  phone?: string;
+  isDefault: boolean;
+}
