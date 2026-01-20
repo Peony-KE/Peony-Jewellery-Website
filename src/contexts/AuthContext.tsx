@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             first_name: firstName,
             last_name: lastName,
           },
-          emailRedirectTo: `${window.location.origin}/account`,
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/account` : undefined,
         },
       });
 
