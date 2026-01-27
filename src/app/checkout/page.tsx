@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
@@ -28,6 +28,7 @@ export default function CheckoutPage() {
     postalCode: '',
   });
   const [orderError, setOrderError] = useState('');
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,10 +40,11 @@ export default function CheckoutPage() {
     setStep('payment');
   };
 
-  const handlePaymentSuccess = async () => {
-    setOrderError('');
+  // Create order when moving to payment step (needed for card payments)
+  const createPendingOrder = async () => {
+    if (orderId) return orderId; // Order already created
     
-    // Create order in database
+    setOrderError('');
     const orderItems = items.map((item) => ({
       id: item.product.id,
       name: item.product.name,
@@ -61,16 +63,37 @@ export default function CheckoutPage() {
       total: getCartTotal(),
       items: orderItems,
       payment_method: paymentMethod,
+      status: 'pending',
     });
 
-    if (result.success) {
-      clearCart();
-      setStep('confirmation');
+    if (result.success && result.data) {
+      setOrderId(result.data.id);
+      return result.data.id;
     } else {
       setOrderError(result.error || 'Failed to create order. Please try again.');
       console.error('Order creation failed:', result.error);
+      return null;
     }
   };
+
+  const handlePaymentSuccess = async () => {
+    // For card payments, order is already created
+    // For M-Pesa, create order now
+    if (paymentMethod === 'mpesa') {
+      await createPendingOrder();
+    }
+    
+    clearCart();
+    setStep('confirmation');
+  };
+
+  // Create order when card payment is selected
+  useEffect(() => {
+    if (step === 'payment' && paymentMethod === 'card' && !orderId) {
+      createPendingOrder();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, paymentMethod, orderId]);
 
   // Redirect to cart if empty
   if (items.length === 0 && step !== 'confirmation') {
@@ -302,7 +325,10 @@ export default function CheckoutPage() {
                       </div>
                     </button>
                     <button
-                      onClick={() => setPaymentMethod('card')}
+                      onClick={() => {
+                        setPaymentMethod('card');
+                        // Order will be created by useEffect when card is selected
+                      }}
                       className={`p-4 rounded-xl border-2 transition-all duration-200 flex items-center space-x-4 ${
                         paymentMethod === 'card'
                           ? 'border-primary bg-primary/5'
@@ -331,7 +357,12 @@ export default function CheckoutPage() {
                   <CardPayment
                     amount={getCartTotal()}
                     onSuccess={handlePaymentSuccess}
-                    onBack={() => setStep('info')}
+                    onBack={() => {
+                      setOrderId(null); // Reset order ID if going back
+                      setStep('info');
+                    }}
+                    orderId={orderId}
+                    onCreateOrder={createPendingOrder}
                   />
                 )}
               </div>
