@@ -45,8 +45,7 @@ export const staticProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&h=400&fit=crop',
     inStock: true,
     featured: true,
-    material: 'Rose Gold Plated',
-    color: 'Rose Gold',
+    specifications: { material: 'Rose Gold Plated', color: 'Rose Gold' },
   },
   {
     id: 'ear-002',
@@ -56,8 +55,7 @@ export const staticProducts: Product[] = [
     category: 'earrings',
     image: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Sterling Silver with Pearls',
-    color: 'White/Silver',
+    specifications: { material: 'Sterling Silver with Pearls', color: 'White/Silver' },
   },
   {
     id: 'ear-003',
@@ -67,8 +65,7 @@ export const staticProducts: Product[] = [
     category: 'earrings',
     image: 'https://images.unsplash.com/photo-1588444837495-c6cfeb53f32d?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Sterling Silver with Crystal',
-    color: 'Clear/Silver',
+    specifications: { material: 'Sterling Silver with Crystal', color: 'Clear/Silver' },
   },
   {
     id: 'ear-004',
@@ -78,8 +75,7 @@ export const staticProducts: Product[] = [
     category: 'earrings',
     image: 'https://images.unsplash.com/photo-1630019852942-f89202989a59?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Gold Plated with Silk',
-    color: 'Gold/Multi',
+    specifications: { material: 'Gold Plated with Silk', color: 'Gold/Multi', style: 'Bohemian' },
   },
   
   // Necklaces
@@ -92,8 +88,7 @@ export const staticProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop',
     inStock: true,
     featured: true,
-    material: 'Gold Plated',
-    color: 'Gold',
+    specifications: { material: 'Gold Plated', color: 'Gold', design: 'Layered' },
   },
   {
     id: 'neck-002',
@@ -103,8 +98,7 @@ export const staticProducts: Product[] = [
     category: 'necklaces',
     image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Sterling Silver',
-    color: 'Silver',
+    specifications: { material: 'Sterling Silver', color: 'Silver' },
   },
   {
     id: 'neck-003',
@@ -114,8 +108,7 @@ export const staticProducts: Product[] = [
     category: 'necklaces',
     image: 'https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Leather and Gold Plated',
-    color: 'Black/Gold',
+    specifications: { material: 'Leather and Gold Plated', color: 'Black/Gold', properties: 'Adjustable' },
   },
   {
     id: 'neck-004',
@@ -125,8 +118,7 @@ export const staticProducts: Product[] = [
     category: 'necklaces',
     image: 'https://images.unsplash.com/photo-1601821765780-754fa98637c1?w=400&h=400&fit=crop',
     inStock: false,
-    material: 'Glass Beads',
-    color: 'Multi',
+    specifications: { material: 'Glass Beads', color: 'Multi', design: 'Statement' },
   },
   
   // Rings
@@ -139,8 +131,7 @@ export const staticProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop',
     inStock: true,
     featured: true,
-    material: 'Gold Plated',
-    color: 'Gold',
+    specifications: { material: 'Gold Plated', color: 'Gold', design: 'Stackable' },
   },
   {
     id: 'ring-002',
@@ -150,8 +141,7 @@ export const staticProducts: Product[] = [
     category: 'rings',
     image: 'https://images.unsplash.com/photo-1611955167811-4711904bb9f8?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Sterling Silver with Gemstone',
-    color: 'Silver/Green',
+    specifications: { material: 'Sterling Silver with Gemstone', color: 'Silver/Green', style: 'Vintage' },
   },
   {
     id: 'ring-003',
@@ -161,8 +151,7 @@ export const staticProducts: Product[] = [
     category: 'rings',
     image: 'https://images.unsplash.com/photo-1589674781759-c21c37956a44?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Sterling Silver',
-    color: 'Silver',
+    specifications: { material: 'Sterling Silver', color: 'Silver', design: 'Minimalist' },
   },
   {
     id: 'ring-004',
@@ -172,8 +161,7 @@ export const staticProducts: Product[] = [
     category: 'rings',
     image: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Gold Plated with Rose Quartz',
-    color: 'Gold/Pink',
+    specifications: { material: 'Gold Plated with Rose Quartz', color: 'Gold/Pink', design: 'Statement' },
   },
   
   // Bracelets
@@ -186,8 +174,7 @@ export const staticProducts: Product[] = [
     image: 'https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=400&h=400&fit=crop',
     inStock: true,
     featured: true,
-    material: 'Sterling Silver',
-    color: 'Silver',
+    specifications: { material: 'Sterling Silver', color: 'Silver' },
   },
   {
     id: 'brac-002',
@@ -197,8 +184,7 @@ export const staticProducts: Product[] = [
     category: 'bracelets',
     image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Sterling Silver with Crystals',
-    color: 'Silver/Clear',
+    specifications: { material: 'Sterling Silver with Crystals', color: 'Silver/Clear', style: 'Classic' },
   },
   {
     id: 'brac-003',
@@ -208,8 +194,7 @@ export const staticProducts: Product[] = [
     category: 'bracelets',
     image: 'https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=400&h=400&fit=crop',
     inStock: true,
-    material: 'Genuine Leather with Metal',
-    color: 'Brown/Gold',
+    specifications: { material: 'Genuine Leather with Metal', color: 'Brown/Gold', style: 'Casual' },
   },
   {
     id: 'brac-004',
@@ -219,8 +204,7 @@ export const staticProducts: Product[] = [
     category: 'bracelets',
     image: 'https://images.unsplash.com/photo-1594552072238-b8a33785b261?w=400&h=400&fit=crop',
     inStock: false,
-    material: 'Gold Plated with Pearls',
-    color: 'Gold/White',
+    specifications: { material: 'Gold Plated with Pearls', color: 'Gold/White' },
   },
 ];
 
