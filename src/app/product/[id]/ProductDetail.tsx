@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, ShoppingCart, Minus, Plus, ArrowLeft, Check, Truck, Shield, RotateCcw, Star, ChevronLeft, ChevronRight, Send } from 'lucide-react';
-import { Product } from '@/types';
+import { Product, ProductVariant } from '@/types';
 import { Review } from '@/types/database';
 import { formatPrice, getProductsByCategory } from '@/data/products';
 import { useCart } from '@/contexts/CartContext';
@@ -21,6 +21,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(undefined);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -41,6 +42,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   // Combine main image with additional images for carousel
   const allImages = [product.image, ...(product.images || [])].filter(Boolean);
 
+  // The displayed main image: variant image overrides carousel when a variant is selected
+  const displayedImage = selectedVariant ? selectedVariant.image : allImages[currentImageIndex];
+
   const relatedProducts = getProductsByCategory(product.category)
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
@@ -59,7 +63,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   }, [product.id]);
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    addToCart(product, quantity, selectedVariant);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -67,8 +71,23 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const incrementQuantity = () => setQuantity((q) => q + 1);
   const decrementQuantity = () => setQuantity((q) => Math.max(1, q - 1));
 
-  const nextImage = () => setCurrentImageIndex((i) => (i + 1) % allImages.length);
-  const prevImage = () => setCurrentImageIndex((i) => (i - 1 + allImages.length) % allImages.length);
+  const nextImage = () => {
+    setSelectedVariant(undefined); // clear variant selection when browsing carousel
+    setCurrentImageIndex((i) => (i + 1) % allImages.length);
+  };
+  const prevImage = () => {
+    setSelectedVariant(undefined);
+    setCurrentImageIndex((i) => (i - 1 + allImages.length) % allImages.length);
+  };
+
+  const handleVariantSelect = (variant: ProductVariant) => {
+    if (selectedVariant?.name === variant.name) {
+      // Deselect if clicking the same variant
+      setSelectedVariant(undefined);
+    } else {
+      setSelectedVariant(variant);
+    }
+  };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,8 +175,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             {/* Main Image */}
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted">
               <Image
-                src={allImages[currentImageIndex]}
-                alt={`${product.name} - Image ${currentImageIndex + 1}`}
+                src={displayedImage}
+                alt={selectedVariant ? `${product.name} - ${selectedVariant.name}` : `${product.name} - Image ${currentImageIndex + 1}`}
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -208,9 +227,12 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 {allImages.map((img, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentImageIndex(index)}
+                    onClick={() => {
+                      setCurrentImageIndex(index);
+                      setSelectedVariant(undefined);
+                    }}
                     className={`relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                      index === currentImageIndex
+                      index === currentImageIndex && !selectedVariant
                         ? 'border-primary'
                         : 'border-transparent hover:border-muted-foreground'
                     }`}
@@ -319,25 +341,41 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             {/* Variants */}
             {product.variants && product.variants.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Variants</h3>
+                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                  Variant{selectedVariant ? `: ${selectedVariant.name}` : ''}
+                </h3>
                 <div className="flex flex-wrap gap-3">
-                  {product.variants.map((variant, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-3 border border-border rounded-xl p-2 pr-4 hover:border-primary transition-colors"
-                    >
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        <Image
-                          src={variant.image}
-                          alt={variant.name}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
-                      </div>
-                      <span className="text-sm text-foreground font-medium">{variant.name}</span>
-                    </div>
-                  ))}
+                  {product.variants.map((variant, index) => {
+                    const isSelected = selectedVariant?.name === variant.name;
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => handleVariantSelect(variant)}
+                        className={`flex items-center space-x-3 border-2 rounded-xl p-2 pr-4 transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                            : 'border-border hover:border-primary'
+                        }`}
+                      >
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                          <Image
+                            src={variant.image}
+                            alt={variant.name}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        </div>
+                        <span className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                          {variant.name}
+                        </span>
+                        {isSelected && (
+                          <Check size={16} className="text-primary ml-1" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -378,9 +416,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     {addedToCart ? (
                       <>
                         <Check size={20} />
-                        <span>Added to Cart!</span>
+                        <span>Added{selectedVariant ? ` (${selectedVariant.name})` : ''}!</span>
                       </>
-                    ) : isInCart(product.id) ? (
+                    ) : isInCart(product.id, selectedVariant) ? (
                       <>
                         <ShoppingCart size={20} />
                         <span>Add More to Cart</span>
@@ -388,7 +426,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     ) : (
                       <>
                         <ShoppingCart size={20} />
-                        <span>Add to Cart</span>
+                        <span>Add to Cart{selectedVariant ? ` - ${selectedVariant.name}` : ''}</span>
                       </>
                     )}
                   </Button>

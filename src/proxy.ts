@@ -9,11 +9,15 @@ export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    if (request.nextUrl.pathname.startsWith('/admin')) {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
+  // Only run Supabase auth logic for admin routes
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
+
+  if (!isAdminRoute) {
     return supabaseResponse;
+  }
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
   const supabase = createServerClient(
@@ -39,48 +43,26 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Get user with error handling
+  // Get user - single auth call per request
   let user = null;
   try {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     user = authUser;
   } catch (error) {
-    // If getUser fails, user stays null and will be redirected to login
     console.error('Error getting user in proxy:', error);
   }
 
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    if (request.nextUrl.pathname === '/admin/login') {
-      // Check role from database (user_profiles table)
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile?.role === 'admin') {
-          return NextResponse.redirect(new URL('/admin', request.url));
-        }
-      }
-      return supabaseResponse;
+  // Login page: redirect to admin if already authenticated
+  if (request.nextUrl.pathname === '/admin/login') {
+    if (user) {
+      return NextResponse.redirect(new URL('/admin', request.url));
     }
+    return supabaseResponse;
+  }
 
-    // Protect admin routes
-    if (!user) {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
-    }
-
-    // Check role from database (user_profiles table)
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
+  // All other admin routes: require authentication
+  if (!user) {
+    return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
   return supabaseResponse;

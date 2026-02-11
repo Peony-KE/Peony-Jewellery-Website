@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Plus, Pencil, Trash2, Search, AlertCircle, Package, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Product } from '@/types/database';
@@ -184,13 +183,12 @@ export default function AdminProductsPage() {
                   <tr key={product.id} className="hover:bg-[#920b4c]/20">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-4">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#4d0025] flex-shrink-0">
-                          <Image
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#4d0025] flex-shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
                             src={product.image}
                             alt={product.name}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
+                            className="w-full h-full object-cover"
                           />
                         </div>
                         <div>

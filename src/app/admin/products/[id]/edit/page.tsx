@@ -216,7 +216,14 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
     const hasSpecs = Object.values(specs).some(v => v.trim());
     const finalData = {
-      ...formData,
+      name: formData.name,
+      description: formData.description,
+      price: formData.price,
+      category: formData.category,
+      image: formData.image,
+      images: formData.images || [],
+      in_stock: formData.in_stock,
+      featured: formData.featured,
       specifications: hasSpecs ? specs : null,
       variants: variants.length > 0 ? variants : null,
     };
@@ -230,9 +237,10 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       if (error) throw error;
 
       router.push('/admin/products');
-    } catch (err) {
-      setError('Failed to update product. Please try again.');
-      console.error(err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as Record<string, unknown>).message) : 'Unknown error';
+      setError(`Failed to update product: ${message}`);
+      console.error('Product update error:', err);
     } finally {
       setIsSaving(false);
     }

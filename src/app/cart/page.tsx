@@ -60,76 +60,88 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {items.map((item) => (
-              <div
-                key={item.product.id}
-                className="bg-card border border-border rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row gap-4"
-              >
-                {/* Product Image */}
-                <Link href={`/product/${item.product.id}`} className="flex-shrink-0">
-                  <div className="relative w-full sm:w-32 h-32 rounded-xl overflow-hidden bg-muted">
-                    <Image
-                      src={item.product.image}
-                      alt={item.product.name}
-                      fill
-                      className="object-cover"
-                      sizes="128px"
-                    />
-                  </div>
-                </Link>
-
-                {/* Product Details */}
-                <div className="flex-1 space-y-2">
-                  <Link href={`/product/${item.product.id}`}>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                      {item.product.category}
-                    </p>
-                    <h3 className="font-semibold text-foreground hover:text-primary transition-colors">
-                      {item.product.name}
-                    </h3>
+            {items.map((item) => {
+              const cartKey = item.selectedVariant
+                ? `${item.product.id}::${item.selectedVariant.name}`
+                : item.product.id;
+              const displayImage = item.selectedVariant?.image || item.product.image;
+              
+              return (
+                <div
+                  key={cartKey}
+                  className="bg-card border border-border rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row gap-4"
+                >
+                  {/* Product Image */}
+                  <Link href={`/product/${item.product.id}`} className="flex-shrink-0">
+                    <div className="relative w-full sm:w-32 h-32 rounded-xl overflow-hidden bg-muted">
+                      <Image
+                        src={displayImage}
+                        alt={item.selectedVariant ? `${item.product.name} - ${item.selectedVariant.name}` : item.product.name}
+                        fill
+                        className="object-cover"
+                        sizes="128px"
+                      />
+                    </div>
                   </Link>
-                  <p className="text-primary font-semibold">
-                    {formatPrice(item.product.price)}
-                  </p>
 
-                  {/* Quantity & Remove */}
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="flex items-center border border-border rounded-full">
+                  {/* Product Details */}
+                  <div className="flex-1 space-y-2">
+                    <Link href={`/product/${item.product.id}`}>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                        {item.product.category}
+                      </p>
+                      <h3 className="font-semibold text-foreground hover:text-primary transition-colors">
+                        {item.product.name}
+                      </h3>
+                    </Link>
+                    {item.selectedVariant && (
+                      <p className="text-sm text-primary font-medium">
+                        Variant: {item.selectedVariant.name}
+                      </p>
+                    )}
+                    <p className="text-primary font-semibold">
+                      {formatPrice(item.product.price)}
+                    </p>
+
+                    {/* Quantity & Remove */}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center border border-border rounded-full">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant)}
+                          className="p-2 hover:bg-muted rounded-l-full transition-colors"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="px-4 font-medium text-foreground">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant)}
+                          className="p-2 hover:bg-muted rounded-r-full transition-colors"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        className="p-2 hover:bg-muted rounded-l-full transition-colors"
-                        aria-label="Decrease quantity"
+                        onClick={() => removeFromCart(item.product.id, item.selectedVariant)}
+                        className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                        aria-label="Remove item"
                       >
-                        <Minus size={16} />
-                      </button>
-                      <span className="px-4 font-medium text-foreground">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        className="p-2 hover:bg-muted rounded-r-full transition-colors"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus size={16} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
-                    <button
-                      onClick={() => removeFromCart(item.product.id)}
-                      className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
-                      aria-label="Remove item"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                  </div>
+
+                  {/* Item Total */}
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Subtotal</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {formatPrice(item.product.price * item.quantity)}
+                    </p>
                   </div>
                 </div>
-
-                {/* Item Total */}
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Subtotal</p>
-                  <p className="text-lg font-bold text-foreground">
-                    {formatPrice(item.product.price * item.quantity)}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Order Summary */}

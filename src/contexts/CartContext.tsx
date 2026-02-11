@@ -1,17 +1,22 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { Product, CartItem } from '@/types';
+import { Product, CartItem, ProductVariant } from '@/types';
+
+// Generate a unique key for a cart item based on product ID + variant
+function cartItemKey(productId: string, variant?: ProductVariant): string {
+  return variant ? `${productId}::${variant.name}` : productId;
+}
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, quantity?: number, variant?: ProductVariant) => void;
+  removeFromCart: (productId: string, variant?: ProductVariant) => void;
+  updateQuantity: (productId: string, quantity: number, variant?: ProductVariant) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getCartCount: () => number;
-  isInCart: (productId: string) => boolean;
+  isInCart: (productId: string, variant?: ProductVariant) => boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,35 +56,42 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items]);
 
-  const addToCart = useCallback((product: Product, quantity: number = 1) => {
+  const addToCart = useCallback((product: Product, quantity: number = 1, variant?: ProductVariant) => {
     setItems(currentItems => {
-      const existingItem = currentItems.find(item => item.product.id === product.id);
+      const key = cartItemKey(product.id, variant);
+      const existingItem = currentItems.find(
+        item => cartItemKey(item.product.id, item.selectedVariant) === key
+      );
       
       if (existingItem) {
         return currentItems.map(item =>
-          item.product.id === product.id
+          cartItemKey(item.product.id, item.selectedVariant) === key
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
       
-      return [...currentItems, { product, quantity }];
+      return [...currentItems, { product, quantity, selectedVariant: variant }];
     });
   }, []);
 
-  const removeFromCart = useCallback((productId: string) => {
-    setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
+  const removeFromCart = useCallback((productId: string, variant?: ProductVariant) => {
+    const key = cartItemKey(productId, variant);
+    setItems(currentItems =>
+      currentItems.filter(item => cartItemKey(item.product.id, item.selectedVariant) !== key)
+    );
   }, []);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, variant?: ProductVariant) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, variant);
       return;
     }
     
+    const key = cartItemKey(productId, variant);
     setItems(currentItems =>
       currentItems.map(item =>
-        item.product.id === productId
+        cartItemKey(item.product.id, item.selectedVariant) === key
           ? { ...item, quantity }
           : item
       )
@@ -98,8 +110,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return items.reduce((count, item) => count + item.quantity, 0);
   }, [items]);
 
-  const isInCart = useCallback((productId: string) => {
-    return items.some(item => item.product.id === productId);
+  const isInCart = useCallback((productId: string, variant?: ProductVariant) => {
+    const key = cartItemKey(productId, variant);
+    return items.some(item => cartItemKey(item.product.id, item.selectedVariant) === key);
   }, [items]);
 
   return (

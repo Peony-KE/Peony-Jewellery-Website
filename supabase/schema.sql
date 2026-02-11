@@ -170,6 +170,43 @@ CREATE POLICY "Allow authenticated newsletter deletes" ON newsletter_subscribers
   TO authenticated
   USING (true);
 
+-- Migration: Add newer columns to existing tables (safe to re-run)
+-- Run these if you created the database before these columns were added
+
+-- Add images column if it doesn't exist
+DO $$ BEGIN
+  ALTER TABLE products ADD COLUMN images JSONB DEFAULT '[]'::jsonb;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- Add featured column if it doesn't exist
+DO $$ BEGIN
+  ALTER TABLE products ADD COLUMN featured BOOLEAN DEFAULT false;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- Add specifications column if it doesn't exist
+DO $$ BEGIN
+  ALTER TABLE products ADD COLUMN specifications JSONB DEFAULT NULL;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- Add variants column if it doesn't exist
+DO $$ BEGIN
+  ALTER TABLE products ADD COLUMN variants JSONB DEFAULT NULL;
+EXCEPTION WHEN duplicate_column THEN NULL;
+END $$;
+
+-- Update category constraint to include 'sets'
+ALTER TABLE products DROP CONSTRAINT IF EXISTS products_category_check;
+ALTER TABLE products ADD CONSTRAINT products_category_check 
+  CHECK (category IN ('earrings', 'necklaces', 'rings', 'bracelets', 'sets'));
+
+-- Supabase Storage: Create product-images bucket (run in Supabase Dashboard > Storage)
+-- 1. Create a bucket named "product-images" with public access
+-- 2. Add RLS policy: Allow public reads (SELECT) for everyone
+-- 3. Add RLS policy: Allow authenticated users to upload (INSERT), update (UPDATE), delete (DELETE)
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);

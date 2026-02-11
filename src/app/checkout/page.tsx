@@ -45,10 +45,13 @@ export default function CheckoutPage() {
     // Create order in database
     const orderItems = items.map((item) => ({
       id: item.product.id,
-      name: item.product.name,
+      name: item.selectedVariant
+        ? `${item.product.name} (${item.selectedVariant.name})`
+        : item.product.name,
       price: item.product.price,
       quantity: item.quantity,
-      image: item.product.image,
+      image: item.selectedVariant?.image || item.product.image,
+      variant: item.selectedVariant?.name || null,
     }));
 
     const result = await createOrder({
@@ -345,33 +348,45 @@ export default function CheckoutPage() {
 
               {/* Items */}
               <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
-                {items.map((item) => (
-                  <div key={item.product.id} className="flex items-center space-x-3">
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      <Image
-                        src={item.product.image}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover"
-                        sizes="64px"
-                      />
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-background text-xs rounded-full flex items-center justify-center">
-                        {item.quantity}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {item.product.name}
+                {items.map((item) => {
+                  const itemKey = item.selectedVariant
+                    ? `${item.product.id}::${item.selectedVariant.name}`
+                    : item.product.id;
+                  const displayImage = item.selectedVariant?.image || item.product.image;
+                  
+                  return (
+                    <div key={itemKey} className="flex items-center space-x-3">
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        <Image
+                          src={displayImage}
+                          alt={item.selectedVariant ? `${item.product.name} - ${item.selectedVariant.name}` : item.product.name}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                        />
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-background text-xs rounded-full flex items-center justify-center">
+                          {item.quantity}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {item.product.name}
+                        </p>
+                        {item.selectedVariant && (
+                          <p className="text-xs text-primary font-medium">
+                            {item.selectedVariant.name}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {formatPrice(item.product.price)} x {item.quantity}
+                        </p>
+                      </div>
+                      <p className="text-sm font-medium text-foreground">
+                        {formatPrice(item.product.price * item.quantity)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatPrice(item.product.price)} x {item.quantity}
-                      </p>
                     </div>
-                    <p className="text-sm font-medium text-foreground">
-                      {formatPrice(item.product.price * item.quantity)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">

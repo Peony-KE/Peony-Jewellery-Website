@@ -164,10 +164,17 @@ export default function NewProductPage() {
 
     setIsLoading(true);
 
-    // Build final data with specs and variants
+    // Build final data with all fields
     const hasSpecs = Object.values(specs).some(v => v.trim());
     const finalData = {
-      ...formData,
+      name: formData.name,
+      description: formData.description,
+      price: formData.price,
+      category: formData.category,
+      image: formData.image,
+      images: formData.images || [],
+      in_stock: formData.in_stock,
+      featured: formData.featured,
       specifications: hasSpecs ? specs : null,
       variants: variants.length > 0 ? variants : null,
     };
@@ -178,9 +185,10 @@ export default function NewProductPage() {
       if (error) throw error;
 
       router.push('/admin/products');
-    } catch (err) {
-      setError('Failed to create product. Please try again.');
-      console.error(err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err ? String((err as Record<string, unknown>).message) : 'Unknown error';
+      setError(`Failed to create product: ${message}`);
+      console.error('Product creation error:', err);
     } finally {
       setIsLoading(false);
     }
