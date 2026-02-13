@@ -145,3 +145,60 @@ export async function getProductReviews(productId: string): Promise<{ success: b
     return { success: false, error: 'Failed to fetch reviews' };
   }
 }
+
+export async function getRelatedProducts(category: string, excludeId: string) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('category', category)
+      .neq('id', excludeId)
+      .limit(4);
+
+    if (error) {
+      console.error('Error fetching related products:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    return [];
+  }
+}
+
+export async function getCategoryCoverImages(): Promise<Record<string, string>> {
+  try {
+    const supabase = await createClient();
+    const categories = ['earrings', 'necklaces', 'rings', 'bracelets', 'sets'];
+    const coverImages: Record<string, string> = {};
+
+    for (const category of categories) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('image')
+        .eq('category', category)
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        console.warn(`No image found for category ${category}, using fallback`);
+        coverImages[category] = '';
+      } else {
+        coverImages[category] = data.image;
+      }
+    }
+
+    return coverImages;
+  } catch (error) {
+    console.error('Error fetching category cover images:', error);
+    return {
+      earrings: '',
+      necklaces: '',
+      rings: '',
+      bracelets: '',
+      sets: '',
+    };
+  }
+}

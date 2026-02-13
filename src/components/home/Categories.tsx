@@ -1,12 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { categories } from '@/data/products';
+import { categories as staticCategories } from '@/data/products';
+import { getCategoryCoverImages } from '@/lib/actions';
 
 export default function Categories() {
+  const [categories, setCategories] = useState(staticCategories);
+
+  useEffect(() => {
+    const loadCategoryImages = async () => {
+      const coverImages = await getCategoryCoverImages();
+      const updatedCategories = staticCategories.map(cat => ({
+        ...cat,
+        image: coverImages[cat.id] || cat.image,
+      }));
+      setCategories(updatedCategories);
+    };
+
+    loadCategoryImages();
+  }, []);
   return (
     <section className="py-20 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

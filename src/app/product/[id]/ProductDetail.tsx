@@ -6,12 +6,13 @@ import Link from 'next/link';
 import { Heart, ShoppingCart, Minus, Plus, ArrowLeft, Check, Truck, Shield, RotateCcw, Star, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { Product, ProductVariant } from '@/types';
 import { Review } from '@/types/database';
-import { formatPrice, getProductsByCategory } from '@/data/products';
+import { formatPrice } from '@/data/products';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import Button from '@/components/ui/Button';
 import ProductCard from '@/components/ui/ProductCard';
-import { createReview, getProductReviews } from '@/lib/actions';
+import { createReview, getProductReviews, getRelatedProducts } from '@/lib/actions';
+import { mapSupabaseProduct } from '@/data/products';
 
 interface ProductDetailProps {
   product: Product;
@@ -45,9 +46,18 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   // The displayed main image: variant image overrides carousel when a variant is selected
   const displayedImage = selectedVariant ? selectedVariant.image : allImages[currentImageIndex];
 
-  const relatedProducts = getProductsByCategory(product.category)
-    .filter((p) => p.id !== product.id)
-    .slice(0, 4);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+
+  // Fetch related products from Supabase
+  useEffect(() => {
+    const fetchRelated = async () => {
+      const data = await getRelatedProducts(product.category, product.id);
+      if (data.length > 0) {
+        setRelatedProducts(data.map(mapSupabaseProduct));
+      }
+    };
+    fetchRelated();
+  }, [product.category, product.id]);
 
   // Fetch reviews on mount
   useEffect(() => {
