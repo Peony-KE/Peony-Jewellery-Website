@@ -361,7 +361,7 @@ export default function CheckoutPage() {
                       setOrderId(null); // Reset order ID if going back
                       setStep('info');
                     }}
-                    orderId={orderId}
+                       orderId={orderId}
                     onCreateOrder={createPendingOrder}
                   />
                 )}
