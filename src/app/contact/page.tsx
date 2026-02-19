@@ -286,7 +286,7 @@ export default function ContactPage() {
                 </p>
                 <div className="flex space-x-4">
                   <a
-                    href="https://instagram.com"
+                    href="https://www.instagram.com/peonyhqke"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-background transition-all duration-200"
@@ -295,7 +295,7 @@ export default function ContactPage() {
                     <Instagram size={20} />
                   </a>
                   <a
-                    href="https://tiktok.com"
+                    href="https://www.tiktok.com/@peony_hq_ke"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-background transition-all duration-200"
