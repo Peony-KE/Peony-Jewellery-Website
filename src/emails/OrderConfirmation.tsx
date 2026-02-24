@@ -62,8 +62,8 @@ export default function OrderConfirmation({
             <Img
               src={EMAIL_LOGO_URL}
               alt="Peony HQ Kenya"
-              width={150}
-              height={50}
+              width={80}
+              height={80}
               style={{ margin: '0 auto', display: 'block' }}
             />
           </Section>
