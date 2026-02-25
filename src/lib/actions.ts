@@ -11,7 +11,7 @@ import NewsletterConfirmation from '@/emails/NewsletterConfirmation';
 import ContactConfirmation from '@/emails/ContactConfirmation';
 import AdminContactNotification from '@/emails/AdminContactNotification';
 
-export async function createOrder(orderData: OrderInsert) {
+export async function createOrder(orderData: OrderInsert, mpesaCode?: string) {
   try {
     const supabase = await createClient();
     
@@ -51,6 +51,41 @@ export async function createOrder(orderData: OrderInsert) {
     const customerEmail = orderData.customer_email;
     const orderId = data.id as string;
 
+    // Save/update delivery address for logged-in users (non-blocking)
+    if (user?.id) {
+      void (async () => {
+        const { data: existingDefault } = await supabase
+          .from('user_addresses')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .maybeSingle();
+
+        if (existingDefault) {
+          await supabase
+            .from('user_addresses')
+            .update({
+              address: orderData.address,
+              city: orderData.city ?? '',
+              postal_code: orderData.postal_code || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingDefault.id);
+        } else {
+          await supabase
+            .from('user_addresses')
+            .insert({
+              user_id: user.id,
+              address: orderData.address,
+              city: orderData.city ?? '',
+              postal_code: orderData.postal_code || null,
+              country: 'Kenya',
+              is_default: true,
+            });
+        }
+      })();
+    }
+
     void Promise.all([
       // Customer confirmation
       sendEmail({
@@ -83,6 +118,7 @@ export async function createOrder(orderData: OrderInsert) {
           paymentMethod: orderData.payment_method,
           deliveryAddress: orderData.address,
           city: orderData.city ?? '',
+          mpesaCode,
         }),
       }),
     ]);

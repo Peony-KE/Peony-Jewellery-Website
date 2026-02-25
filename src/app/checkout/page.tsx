@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { formatPrice } from '@/data/products';
 import Button from '@/components/ui/Button';
 import MpesaPayment from '@/components/checkout/MpesaPayment';
@@ -18,6 +20,8 @@ type CheckoutStep = 'info' | 'payment' | 'confirmation';
 
 export default function CheckoutPage() {
   const { items, getCartTotal, clearCart } = useCart();
+  const { user } = useAuth();
+  const supabase = createClient();
   const [step, setStep] = useState<CheckoutStep>('info');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mpesa');
   const [formData, setFormData] = useState({
@@ -30,6 +34,29 @@ export default function CheckoutPage() {
     postalCode: '',
   });
   const [orderError, setOrderError] = useState('');
+
+  // Pre-fill address from saved default for logged-in users
+  useEffect(() => {
+    async function prefillAddress() {
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_addresses')
+        .select('address, city, postal_code')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .maybeSingle();
+      if (data) {
+        setFormData((prev) => ({
+          ...prev,
+          address: data.address,
+          city: data.city,
+          postalCode: data.postal_code || '',
+        }));
+      }
+    }
+    prefillAddress();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Synchronous — computed directly from the selected city
   const shippingFee = formData.city ? getShippingFee(formData.city) : null;
@@ -44,7 +71,7 @@ export default function CheckoutPage() {
     setStep('payment');
   };
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (mpesaCode?: string) => {
     setOrderError('');
 
     const orderItems = items.map((item) => ({
@@ -58,17 +85,20 @@ export default function CheckoutPage() {
       variant: item.selectedVariant?.name || null,
     }));
 
-    const result = await createOrder({
-      customer_name: `${formData.firstName} ${formData.lastName}`,
-      customer_email: formData.email,
-      customer_phone: formData.phone,
-      address: formData.address,
-      city: formData.city,
-      postal_code: formData.postalCode,
-      total: getCartTotal() + (shippingFee ?? 0),
-      items: orderItems,
-      payment_method: paymentMethod,
-    });
+    const result = await createOrder(
+      {
+        customer_name: `${formData.firstName} ${formData.lastName}`,
+        customer_email: formData.email,
+        customer_phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        postal_code: formData.postalCode,
+        total: getCartTotal() + (shippingFee ?? 0),
+        items: orderItems,
+        payment_method: paymentMethod,
+      },
+      mpesaCode,
+    );
 
     if (result.success) {
       clearCart();
@@ -312,22 +342,15 @@ export default function CheckoutPage() {
                         <p className="text-sm text-muted-foreground">Pay with mobile money</p>
                       </div>
                     </button>
-                    <button
-                      onClick={() => setPaymentMethod('card')}
-                      className={`p-4 rounded-xl border-2 transition-all duration-200 flex items-center space-x-4 ${
-                        paymentMethod === 'card'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-muted-foreground'
-                      }`}
-                    >
-                      <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">
+                    <div className="p-4 rounded-xl border-2 border-border flex items-center space-x-4 opacity-50 cursor-not-allowed">
+                      <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center text-white font-bold">
                         $
                       </div>
                       <div className="text-left">
                         <p className="font-semibold text-foreground">Card</p>
-                        <p className="text-sm text-muted-foreground">Visa, Mastercard, etc.</p>
+                        <p className="text-sm text-muted-foreground">Coming soon</p>
                       </div>
-                    </button>
+                    </div>
                   </div>
                 </div>
 

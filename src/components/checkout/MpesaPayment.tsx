@@ -10,7 +10,7 @@ const TILL_NUMBER = "3238987";
 
 interface MpesaPaymentProps {
   amount: number;
-  onSuccess: () => void;
+  onSuccess: (mpesaCode: string) => void;
   onBack: () => void;
 }
 
@@ -20,11 +20,12 @@ export default function MpesaPayment({
   onBack,
 }: MpesaPaymentProps) {
   const total = amount;
+  const [mpesaCode, setMpesaCode] = useState('');
   const [confirmed, setConfirmed] = useState(false);
 
   const handleConfirm = () => {
     setConfirmed(true);
-    setTimeout(() => onSuccess(), 2000);
+    setTimeout(() => onSuccess(mpesaCode.trim().toUpperCase()), 2000);
   };
 
   if (confirmed) {
@@ -104,6 +105,25 @@ export default function MpesaPayment({
         <li>Enter your M-Pesa PIN and confirm</li>
       </ol>
 
+      {/* M-Pesa confirmation code */}
+      <div className="space-y-2">
+        <label htmlFor="mpesaCode" className="block text-sm font-medium text-foreground">
+          M-Pesa Confirmation Code *
+        </label>
+        <input
+          id="mpesaCode"
+          type="text"
+          value={mpesaCode}
+          onChange={(e) => setMpesaCode(e.target.value.toUpperCase())}
+          placeholder="e.g. RCA7X8Y9Z0"
+          maxLength={12}
+          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <p className="text-xs text-muted-foreground">
+          Found in the M-Pesa SMS you received after paying.
+        </p>
+      </div>
+
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4">
         <Button
@@ -115,7 +135,12 @@ export default function MpesaPayment({
           <ArrowLeft size={18} />
           <span>Back</span>
         </Button>
-        <Button type="button" fullWidth onClick={handleConfirm}>
+        <Button
+          type="button"
+          fullWidth
+          onClick={handleConfirm}
+          disabled={mpesaCode.trim().length < 8}
+        >
           I Have Paid
         </Button>
       </div>

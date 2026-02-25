@@ -34,6 +34,7 @@ interface AdminOrderNotificationProps {
   deliveryAddress: string;
   city: string;
   createdAt?: string;
+  mpesaCode?: string;
 }
 
 const formatPrice = (n: number) => `KES ${n.toLocaleString()}`;
@@ -49,6 +50,7 @@ export default function AdminOrderNotification({
   deliveryAddress,
   city,
   createdAt,
+  mpesaCode,
 }: AdminOrderNotificationProps) {
   const orderTime = createdAt
     ? new Date(createdAt).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })
@@ -103,6 +105,14 @@ export default function AdminOrderNotification({
                 </Text>
               </Column>
             </Row>
+            {mpesaCode && (
+              <Row style={infoRow}>
+                <Column style={labelCol}><Text style={label}>M-Pesa Code</Text></Column>
+                <Column>
+                  <Text style={mpesaCodeStyle}>{mpesaCode}</Text>
+                </Column>
+              </Row>
+            )}
           </Section>
 
           <Hr style={divider} />
@@ -280,5 +290,14 @@ const link: React.CSSProperties = {
 const actionText: React.CSSProperties = {
   color: '#444',
   fontSize: '14px',
+  margin: '0',
+};
+
+const mpesaCodeStyle: React.CSSProperties = {
+  color: '#82001a',
+  fontSize: '15px',
+  fontWeight: '700',
+  fontFamily: 'monospace',
+  letterSpacing: '0.1em',
   margin: '0',
 };
