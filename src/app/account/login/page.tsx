@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
@@ -13,30 +13,30 @@ export default function LoginPage() {
   const router = useRouter();
   const { signIn, loading: authLoading, user } = useAuth();
   const { isAdmin } = useAdminMode();
-  const supabase = createClient();
-  
+  const supabase = useMemo(() => createClient(), []);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect admins to admin login
-  useEffect(() => {
-    async function checkAdminStatus() {
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+  const userId = user?.id;
 
-        if (profile?.role === 'admin') {
-          router.push('/admin/login');
-        }
-      }
+  // If user is already signed in, check role and redirect
+  useEffect(() => {
+    if (!userId) return;
+
+    async function checkAdminStatus() {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      router.push(profile?.role === 'admin' ? '/admin' : '/account');
     }
     checkAdminStatus();
-  }, [user, router, supabase]);
+  }, [userId, router, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,29 +45,11 @@ export default function LoginPage() {
 
     const result = await signIn(email, password);
 
-    if (result.success) {
-      // Check if user is admin and redirect accordingly
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profile?.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/account');
-        }
-      } else {
-        router.push('/account');
-      }
-      router.refresh();
-    } else {
+    if (!result.success) {
       setError(result.error || 'Failed to sign in. Please try again.');
       setIsLoading(false);
     }
+    // On success: AuthContext sets user → useEffect above fires → handles redirect
   };
 
   return (

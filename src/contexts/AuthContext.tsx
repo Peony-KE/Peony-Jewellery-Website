@@ -117,11 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    // Clear local state immediately so the UI responds right away
+    setUser(null);
+    // Invalidate the server session in the background
+    supabase.auth.signOut().catch(err => console.error('Error signing out:', err));
   }, [supabase]);
 
   const updateProfile = useCallback(async (data: {
