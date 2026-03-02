@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, User, Mail, Phone, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
+import { saveUserProfile } from '@/lib/actions';
 import Button from '@/components/ui/Button';
 
 export default function ProfilePage() {
@@ -21,6 +22,8 @@ export default function ProfilePage() {
     phone: '',
   });
   const supabase = useMemo(() => createClient(), []);
+  // Tracks what's currently persisted so we skip no-op saves
+  const lastSavedRef = useRef({ firstName: '', lastName: '', phone: '' });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -35,13 +38,13 @@ export default function ProfilePage() {
     }
   }, [user?.email]);
 
-  // Fetch name/phone from DB in the background (non-blocking)
+  // Fetch name/phone from DB in the background (non-blocking).
+  // Depends on user?.id so it doesn't re-run when profile fields change.
   useEffect(() => {
     async function fetchProfile() {
       if (!user) return;
 
       try {
-        // Run session fetch and DB query in parallel
         const [{ data: { session } }, { data: profile, error: profileError }] = await Promise.all([
           supabase.auth.getSession(),
           supabase.from('user_profiles').select('*').eq('id', user.id).single(),
@@ -55,22 +58,66 @@ export default function ProfilePage() {
         const authFirstName = rawMetaData.first_name || rawMetaData.firstName || '';
         const authLastName = rawMetaData.last_name || rawMetaData.lastName || '';
 
-        setFormData({
+        const fetched = {
           firstName: profile?.first_name || rawMetaData.first_name || rawMetaData.firstName || authFirstName || user.firstName || '',
           lastName: profile?.last_name || rawMetaData.last_name || rawMetaData.lastName || authLastName || user.lastName || '',
           email: user.email || '',
           phone: profile?.phone || user.phone || '',
-        });
+        };
+
+        setFormData(fetched);
+        lastSavedRef.current = { firstName: fetched.firstName, lastName: fetched.lastName, phone: fetched.phone };
       } catch (err) {
         console.error('Error loading profile:', err);
         setError('Failed to load profile');
       }
     }
 
-    if (user) {
+    if (user?.id) {
       fetchProfile();
     }
-  }, [user, supabase]);
+  }, [user?.id, supabase]);
+
+  const saveProfile = useCallback(async (data: { firstName: string; lastName: string; phone: string }) => {
+    if (!user) return;
+
+    const unchanged =
+      data.firstName === lastSavedRef.current.firstName &&
+      data.lastName === lastSavedRef.current.lastName &&
+      data.phone === lastSavedRef.current.phone;
+    if (unchanged) return;
+
+    setIsSaving(true);
+    setError('');
+    setSuccess(false);
+
+    try {
+      // Update local context state immediately
+      updateProfile({
+        firstName: data.firstName || undefined,
+        lastName: data.lastName || undefined,
+        phone: data.phone || undefined,
+      });
+
+      // Save to DB via server action (avoids client-side token refresh issues)
+      const result = await saveUserProfile(user.id, {
+        firstName: data.firstName || undefined,
+        lastName: data.lastName || undefined,
+        phone: data.phone || undefined,
+      });
+
+      if (!result.success) throw new Error(result.error);
+
+      lastSavedRef.current = { ...data };
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [user, updateProfile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,49 +126,14 @@ export default function ProfilePage() {
     setSuccess(false);
   };
 
+  // Auto-save when the user leaves a field
+  const handleBlur = () => {
+    saveProfile({ firstName: formData.firstName, lastName: formData.lastName, phone: formData.phone });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess(false);
-    setIsSaving(true);
-
-    try {
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Update auth user metadata
-      await updateProfile({
-        firstName: formData.firstName || undefined,
-        lastName: formData.lastName || undefined,
-        phone: formData.phone || undefined,
-      });
-
-      // Update or insert user profile in database
-      const { error: upsertError } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: user.id,
-          first_name: formData.firstName || null,
-          last_name: formData.lastName || null,
-          phone: formData.phone || null,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'id',
-        });
-
-      if (upsertError) {
-        throw upsertError;
-      }
-
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update profile');
-    } finally {
-      setIsSaving(false);
-    }
+    await saveProfile({ firstName: formData.firstName, lastName: formData.lastName, phone: formData.phone });
   };
 
   if (authLoading) {
@@ -187,6 +199,7 @@ export default function ProfilePage() {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
+                  onBlur={handleBlur}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter your first name"
                 />
@@ -206,6 +219,7 @@ export default function ProfilePage() {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
+                  onBlur={handleBlur}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter your last name"
                 />
@@ -246,6 +260,7 @@ export default function ProfilePage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  onBlur={handleBlur}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="0712 345 678"
                 />

@@ -11,6 +11,36 @@ import NewsletterConfirmation from '@/emails/NewsletterConfirmation';
 import ContactConfirmation from '@/emails/ContactConfirmation';
 import AdminContactNotification from '@/emails/AdminContactNotification';
 
+export async function saveUserProfile(userId: string, data: {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .upsert({
+        id: userId,
+        first_name: data.firstName || null,
+        last_name: data.lastName || null,
+        phone: data.phone || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Error saving profile:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving profile:', error);
+    return { success: false, error: 'Failed to save profile' };
+  }
+}
+
 export async function createOrder(orderData: OrderInsert, mpesaCode?: string, shippingFee = 0) {
   try {
     const supabase = await createClient();

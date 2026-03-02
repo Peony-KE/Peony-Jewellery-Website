@@ -124,33 +124,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase]);
 
-  const updateProfile = useCallback(async (data: { 
-    firstName?: string; 
-    lastName?: string; 
-    phone?: string 
+  const updateProfile = useCallback(async (data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string
   }) => {
     if (!user) return;
 
-    try {
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          first_name: data.firstName,
-          last_name: data.lastName,
-        },
-      });
+    // Update local state immediately so the UI reflects changes right away
+    setUser({
+      ...user,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+    });
 
-      if (authError) throw authError;
-
-      setUser({
-        ...user,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      throw error;
-    }
+    // Sync auth metadata in the background — don't block the caller
+    supabase.auth.updateUser({
+      data: {
+        first_name: data.firstName,
+        last_name: data.lastName,
+      },
+    }).catch(err => console.error('Auth metadata sync failed:', err));
   }, [supabase, user]);
 
   const value: AuthContextType = {
