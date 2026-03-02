@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, User, Mail, Phone, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -11,7 +11,6 @@ import Button from '@/components/ui/Button';
 export default function ProfilePage() {
   const router = useRouter();
   const { user, loading: authLoading, updateProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -21,7 +20,7 @@ export default function ProfilePage() {
     email: '',
     phone: '',
   });
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -29,59 +28,42 @@ export default function ProfilePage() {
     }
   }, [user, authLoading, router]);
 
+  // Pre-populate email as soon as auth resolves — no DB round-trip needed
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({ ...prev, email: user.email || '' }));
+    }
+  }, [user?.email]);
+
+  // Fetch name/phone from DB in the background (non-blocking)
   useEffect(() => {
     async function fetchProfile() {
       if (!user) return;
 
       try {
-        setIsLoading(true);
-        
-        // Get current auth session to access user metadata
-        const { data: { session } } = await supabase.auth.getSession();
-        const authUser = session?.user;
-        
-        // Get email from auth user
-        const email = user.email || '';
-
-        // Get firstName/lastName from auth user metadata (set during signup)
-        const authFirstName = authUser?.user_metadata?.first_name || authUser?.user_metadata?.firstName || '';
-        const authLastName = authUser?.user_metadata?.last_name || authUser?.user_metadata?.lastName || '';
-
-        // Fetch profile from user_profiles table
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        // Run session fetch and DB query in parallel
+        const [{ data: { session } }, { data: profile, error: profileError }] = await Promise.all([
+          supabase.auth.getSession(),
+          supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+        ]);
 
         if (profileError && profileError.code !== 'PGRST116') {
-          // PGRST116 is "not found" - that's okay, we'll create it
           console.error('Error fetching profile:', profileError);
         }
 
-        // Also try to get from raw_user_meta_data if available
-        const rawMetaData = authUser?.user_metadata || {};
-        
-        // Priority: user_profiles table > auth metadata (multiple formats) > user object > empty
+        const rawMetaData = session?.user?.user_metadata || {};
+        const authFirstName = rawMetaData.first_name || rawMetaData.firstName || '';
+        const authLastName = rawMetaData.last_name || rawMetaData.lastName || '';
+
         setFormData({
-          firstName: profile?.first_name || 
-                     rawMetaData.first_name || 
-                     rawMetaData.firstName || 
-                     authFirstName || 
-                     user.firstName || '',
-          lastName: profile?.last_name || 
-                    rawMetaData.last_name || 
-                    rawMetaData.lastName || 
-                    authLastName || 
-                    user.lastName || '',
-          email: email,
+          firstName: profile?.first_name || rawMetaData.first_name || rawMetaData.firstName || authFirstName || user.firstName || '',
+          lastName: profile?.last_name || rawMetaData.last_name || rawMetaData.lastName || authLastName || user.lastName || '',
+          email: user.email || '',
           phone: profile?.phone || user.phone || '',
         });
       } catch (err) {
         console.error('Error loading profile:', err);
         setError('Failed to load profile');
-      } finally {
-        setIsLoading(false);
       }
     }
 
@@ -142,7 +124,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
