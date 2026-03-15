@@ -99,6 +99,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     }
   };
 
+  const hasVariants = product.variants && product.variants.length > 0;
+
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingReview(true);
@@ -415,6 +417,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             {/* Quantity & Add to Cart */}
             {product.inStock && (
               <div className="space-y-4">
+                {/* Variant required notice */}
+                {hasVariants && !selectedVariant && (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Please select a variant above before adding to cart.
+                  </p>
+                )}
+
                 {/* Quantity Selector */}
                 <div className="flex items-center space-x-4">
                   <span className="text-foreground font-medium">Quantity:</span>
@@ -444,6 +453,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     size="lg"
                     fullWidth
                     className="flex items-center justify-center space-x-2"
+                    disabled={hasVariants && !selectedVariant}
                   >
                     {addedToCart ? (
                       <>

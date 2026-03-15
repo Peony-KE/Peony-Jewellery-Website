@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Heart, Menu, X, Search, Sun, Moon, User, LogOut } from 'lucide-react';
+import { ShoppingCart, Heart, Menu, X, Search, Sun, Moon, User, LogOut, ChevronDown } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useWishlist } from '@/contexts/WishlistContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { categories } from '@/data/products';
 
 export default function Navbar() {
   const router = useRouter();
@@ -88,15 +89,48 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) =>
+              link.label === 'Shop' ? (
+                <div key={link.href} className="relative group/shop">
+                  <Link
+                    href={link.href}
+                    className="text-foreground hover:text-primary transition-colors duration-200 font-medium inline-flex items-center space-x-1"
+                  >
+                    <span>{link.label}</span>
+                    <ChevronDown size={16} className="transition-transform duration-200 group-hover/shop:rotate-180" />
+                  </Link>
+                  {/* Shop Dropdown */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-200">
+                    <div className="bg-card border border-border rounded-xl shadow-lg py-2 w-48">
+                      <Link
+                        href="/shop"
+                        className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors font-medium"
+                      >
+                        View All
+                      </Link>
+                      <div className="border-t border-border my-1" />
+                      {categories.map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href={`/shop/${cat.id}`}
+                          className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-primary transition-colors capitalize"
+                        >
+                          {cat.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
           </div>
 
           {/* Right side icons */}
@@ -259,16 +293,47 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="md:hidden bg-background border-t border-border">
           <div className="px-4 py-4 space-y-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="block py-2 text-foreground hover:text-primary transition-colors font-medium"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) =>
+              link.label === 'Shop' ? (
+                <div key={link.href} className="space-y-1">
+                  <Link
+                    href={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block py-2 text-foreground hover:text-primary transition-colors font-medium"
+                  >
+                    Shop
+                  </Link>
+                  <div className="pl-4 space-y-1 border-l-2 border-border">
+                    <Link
+                      href="/shop"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block py-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      View All
+                    </Link>
+                    {categories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        href={`/shop/${cat.id}`}
+                        onClick={() => setIsMenuOpen(false)}
+                        className="block py-1.5 text-sm text-muted-foreground hover:text-primary transition-colors capitalize"
+                      >
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block py-2 text-foreground hover:text-primary transition-colors font-medium"
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
           </div>
         </div>
       )}

@@ -100,20 +100,30 @@ export default function ProductCard({ product }: ProductCardProps) {
             </Link>
           </div>
 
-          {/* Add to Cart Button - Appears on Hover */}
+          {/* Add to Cart / Select Variant Button - Appears on Hover */}
           {product.inStock && (
             <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0 pointer-events-none sm:pointer-events-auto">
-              <button
-                onClick={handleAddToCart}
-                className={`w-full py-3 rounded-full font-medium flex items-center justify-center space-x-2 transition-all duration-200 ${
-                  isInCart(product.id)
-                    ? 'bg-accent text-accent-foreground'
-                    : 'bg-primary text-background hover:opacity-90'
-                }`}
-              >
-                <ShoppingCart size={18} />
-                <span>{isInCart(product.id) ? 'In Cart' : 'Add to Cart'}</span>
-              </button>
+              {product.variants && product.variants.length > 0 ? (
+                <Link
+                  href={`/product/${product.id}`}
+                  className="w-full py-3 rounded-full font-medium flex items-center justify-center space-x-2 transition-all duration-200 bg-primary text-background hover:opacity-90"
+                >
+                  <Eye size={18} />
+                  <span>Select Variant</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  className={`w-full py-3 rounded-full font-medium flex items-center justify-center space-x-2 transition-all duration-200 ${
+                    isInCart(product.id)
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-primary text-background hover:opacity-90'
+                  }`}
+                >
+                  <ShoppingCart size={18} />
+                  <span>{isInCart(product.id) ? 'In Cart' : 'Add to Cart'}</span>
+                </button>
+              )}
             </div>
           )}
         </div>
