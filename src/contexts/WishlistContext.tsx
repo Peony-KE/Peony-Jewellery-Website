@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Product } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface WishlistContextType {
   items: Product[];
@@ -15,40 +17,148 @@ interface WishlistContextType {
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
-const WISHLIST_STORAGE_KEY = 'peony-wishlist';
+const GUEST_WISHLIST_KEY = 'peony-wishlist-guest';
 
-function getInitialWishlist(): Product[] {
+function getGuestWishlist(): Product[] {
   if (typeof window === 'undefined') return [];
   try {
-    const storedWishlist = localStorage.getItem(WISHLIST_STORAGE_KEY);
-    return storedWishlist ? JSON.parse(storedWishlist) : [];
+    const stored = localStorage.getItem(GUEST_WISHLIST_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
 }
 
+function saveGuestWishlist(items: Product[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(GUEST_WISHLIST_KEY, JSON.stringify(items));
+}
+
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<Product[]>([]);
   const isInitialized = useRef(false);
+  const prevUserId = useRef<string | null>(null);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Hydrate from localStorage on mount - this is a valid pattern for client-side hydration
-  useEffect(() => {
-    if (!isInitialized.current) {
-      isInitialized.current = true;
-      const initialItems = getInitialWishlist();
-      if (initialItems.length > 0) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setItems(initialItems);
-      }
+  // ---------- Supabase helpers ----------
+
+  const loadWishlistFromSupabase = useCallback(async (userId: string): Promise<Product[]> => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('user_wishlist')
+        .select('product_id, products(*)')
+        .eq('user_id', userId);
+
+      if (error || !data) return [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return data.filter((row: any) => row.products).map((row: any) => {
+        const p = row.products;
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          category: p.category,
+          image: p.image,
+          images: p.images || [],
+          inStock: p.in_stock,
+          featured: p.featured,
+          discount_percentage: p.discount_percentage ?? null,
+          specifications: p.specifications || undefined,
+          variants: p.variants || undefined,
+        } as Product;
+      });
+    } catch {
+      return [];
     }
   }, []);
 
-  // Save wishlist to localStorage whenever it changes (after initialization)
-  useEffect(() => {
-    if (isInitialized.current) {
-      localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
+  const saveWishlistToSupabase = useCallback(async (userId: string, wishlistItems: Product[]) => {
+    try {
+      const supabase = createClient();
+      await supabase.from('user_wishlist').delete().eq('user_id', userId);
+      if (wishlistItems.length > 0) {
+        const rows = wishlistItems.map(item => ({
+          user_id: userId,
+          product_id: item.id,
+        }));
+        await supabase.from('user_wishlist').insert(rows);
+      }
+    } catch (err) {
+      console.error('Failed to save wishlist to Supabase:', err);
     }
-  }, [items]);
+  }, []);
+
+  // ---------- Auth-aware initialization ----------
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    const userId = user?.id ?? null;
+    const previousUserId = prevUserId.current;
+
+    if (isInitialized.current && userId === previousUserId) return;
+
+    const initialize = async () => {
+      // If previous user was logged in and is now logging out, save their wishlist first
+      if (previousUserId && !userId) {
+        await saveWishlistToSupabase(previousUserId, items);
+      }
+
+      if (userId) {
+        // User logged in — load their server wishlist
+        const serverWishlist = await loadWishlistFromSupabase(userId);
+
+        // Merge guest items
+        const guestItems = getGuestWishlist();
+        if (guestItems.length > 0) {
+          const merged = [...serverWishlist];
+          for (const guestItem of guestItems) {
+            if (!merged.some(item => item.id === guestItem.id)) {
+              merged.push(guestItem);
+            }
+          }
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setItems(merged);
+          saveGuestWishlist([]);
+          await saveWishlistToSupabase(userId, merged);
+        } else {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setItems(serverWishlist);
+        }
+      } else {
+        // Guest — load from localStorage
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setItems(getGuestWishlist());
+      }
+
+      prevUserId.current = userId;
+      isInitialized.current = true;
+    };
+
+    initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading]);
+
+  // ---------- Persist on change ----------
+
+  useEffect(() => {
+    if (!isInitialized.current) return;
+
+    if (user?.id) {
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+      syncTimer.current = setTimeout(() => {
+        saveWishlistToSupabase(user.id, items);
+      }, 500);
+    } else {
+      saveGuestWishlist(items);
+    }
+  }, [items, user?.id, saveWishlistToSupabase]);
+
+  // ---------- Wishlist operations ----------
 
   const addToWishlist = useCallback((product: Product) => {
     setItems(currentItems => {

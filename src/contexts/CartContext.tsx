@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Product, CartItem, ProductVariant } from '@/types';
 import { calculateDiscountedPrice } from '@/data/products';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 
 // Generate a unique key for a cart item based on product ID + variant
 function cartItemKey(productId: string, variant?: ProductVariant): string {
@@ -22,40 +24,163 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'peony-cart';
+const GUEST_CART_KEY = 'peony-cart-guest';
 
-function getInitialCart(): CartItem[] {
+function getGuestCart(): CartItem[] {
   if (typeof window === 'undefined') return [];
   try {
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-    return storedCart ? JSON.parse(storedCart) : [];
+    const stored = localStorage.getItem(GUEST_CART_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
 }
 
+function saveGuestCart(items: CartItem[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const isInitialized = useRef(false);
+  const prevUserId = useRef<string | null>(null);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Hydrate from localStorage on mount - this is a valid pattern for client-side hydration
-  useEffect(() => {
-    if (!isInitialized.current) {
-      isInitialized.current = true;
-      const initialItems = getInitialCart();
-      if (initialItems.length > 0) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setItems(initialItems);
-      }
+  // ---------- Supabase helpers ----------
+
+  const loadCartFromSupabase = useCallback(async (userId: string): Promise<CartItem[]> => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('user_cart')
+        .select('product_id, variant_name, quantity, products(*)')
+        .eq('user_id', userId);
+
+      if (error || !data) return [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return data.filter((row: any) => row.products).map((row: any) => {
+        const p = row.products;
+        const product: Product = {
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          category: p.category,
+          image: p.image,
+          images: p.images || [],
+          inStock: p.in_stock,
+          featured: p.featured,
+          discount_percentage: p.discount_percentage ?? null,
+          specifications: p.specifications || undefined,
+          variants: p.variants || undefined,
+        };
+        const variant = row.variant_name && product.variants
+          ? product.variants.find((v: ProductVariant) => v.name === row.variant_name)
+          : undefined;
+        return { product, quantity: row.quantity, selectedVariant: variant } as CartItem;
+      });
+    } catch {
+      return [];
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes (after initialization)
-  useEffect(() => {
-    if (isInitialized.current) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  const saveCartToSupabase = useCallback(async (userId: string, cartItems: CartItem[]) => {
+    try {
+      const supabase = createClient();
+      // Clear existing cart then insert fresh
+      await supabase.from('user_cart').delete().eq('user_id', userId);
+      if (cartItems.length > 0) {
+        const rows = cartItems.map(item => ({
+          user_id: userId,
+          product_id: item.product.id,
+          variant_name: item.selectedVariant?.name ?? null,
+          quantity: item.quantity,
+        }));
+        await supabase.from('user_cart').insert(rows);
+      }
+    } catch (err) {
+      console.error('Failed to save cart to Supabase:', err);
     }
-  }, [items]);
+  }, []);
+
+  // ---------- Auth-aware initialization ----------
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    const userId = user?.id ?? null;
+    const previousUserId = prevUserId.current;
+
+    // Same user — skip
+    if (isInitialized.current && userId === previousUserId) return;
+
+    const initialize = async () => {
+      // If previous user was logged in and is now logging out, save their cart first
+      if (previousUserId && !userId) {
+        await saveCartToSupabase(previousUserId, items);
+      }
+
+      if (userId) {
+        // User just logged in — load their server cart
+        const serverCart = await loadCartFromSupabase(userId);
+        
+        // If there are guest items, merge them into the server cart
+        const guestItems = getGuestCart();
+        if (guestItems.length > 0) {
+          const merged = [...serverCart];
+          for (const guestItem of guestItems) {
+            const key = cartItemKey(guestItem.product.id, guestItem.selectedVariant);
+            const existing = merged.find(
+              item => cartItemKey(item.product.id, item.selectedVariant) === key
+            );
+            if (!existing) {
+              merged.push(guestItem);
+            }
+          }
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setItems(merged);
+          // Clear guest cart after merge
+          saveGuestCart([]);
+          // Save merged cart to server
+          await saveCartToSupabase(userId, merged);
+        } else {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setItems(serverCart);
+        }
+      } else {
+        // Guest — load from localStorage
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setItems(getGuestCart());
+      }
+
+      prevUserId.current = userId;
+      isInitialized.current = true;
+    };
+
+    initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading]);
+
+  // ---------- Persist on change ----------
+
+  useEffect(() => {
+    if (!isInitialized.current) return;
+
+    if (user?.id) {
+      // Debounce Supabase writes
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+      syncTimer.current = setTimeout(() => {
+        saveCartToSupabase(user.id, items);
+      }, 500);
+    } else {
+      saveGuestCart(items);
+    }
+  }, [items, user?.id, saveCartToSupabase]);
+
+  // ---------- Cart operations (unchanged) ----------
 
   const addToCart = useCallback((product: Product, quantity: number = 1, variant?: ProductVariant) => {
     setItems(currentItems => {
