@@ -472,11 +472,36 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {/* Payment method selector */}
+                <div className="bg-card border border-border rounded-2xl p-6">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Payment Method</h2>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {(['mpesa', 'card'] as const).map((method) => (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => setPaymentMethod(method)}
+                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          paymentMethod === method ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
+                        }`}
+                      >
+                        <p className="font-medium text-sm text-foreground">
+                          {method === 'mpesa' ? 'M-Pesa' : 'Card'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {method === 'mpesa' ? 'Pay via mobile money' : 'Visa or Mastercard'}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <CardPayment
                   amount={orderTotal}
                   email={formData.email}
                   name={`${formData.firstName} ${formData.lastName}`}
                   phone={formData.phone}
+                  paymentMethod={paymentMethod}
                   onSuccess={async (reference) => {
                     const res = await fetch('/api/paystack/verify', {
                       method: 'POST',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Smartphone, ArrowLeft, Lock } from 'lucide-react';
+import { Smartphone, CreditCard, ArrowLeft, Lock } from 'lucide-react';
 import { formatPrice } from '@/data/products';
 import Button from '@/components/ui/Button';
 
@@ -17,11 +17,12 @@ interface CardPaymentProps {
   email: string;
   name: string;
   phone: string;
+  paymentMethod: 'mpesa' | 'card';
   onSuccess: (reference: string) => void;
   onBack: () => void;
 }
 
-export default function CardPayment({ amount, email, name, phone, onSuccess, onBack }: CardPaymentProps) {
+export default function CardPayment({ amount, email, name, phone, paymentMethod, onSuccess, onBack }: CardPaymentProps) {
   const scriptLoaded = useRef(false);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function CardPayment({ amount, email, name, phone, onSuccess, onB
       email,
       amount: amount * 100, // Paystack uses kobo/cents
       currency: 'KES',
-      channels: ['mobile_money'],
+      channels: paymentMethod === 'card' ? ['card'] : ['mobile_money'],
       ref: `peony_${Date.now()}`,
       metadata: {
         custom_fields: [
@@ -64,15 +65,19 @@ export default function CardPayment({ amount, email, name, phone, onSuccess, onB
     handler.openIframe();
   };
 
+  const isCard = paymentMethod === 'card';
+
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-center space-x-3 mb-6">
-        <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
-          <Smartphone className="text-white" size={24} />
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isCard ? 'bg-blue-600' : 'bg-green-600'}`}>
+          {isCard ? <CreditCard className="text-white" size={24} /> : <Smartphone className="text-white" size={24} />}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-foreground">M-Pesa</h3>
-          <p className="text-sm text-muted-foreground">Pay securely via M-Pesa</p>
+          <h3 className="text-lg font-semibold text-foreground">{isCard ? 'Card Payment' : 'M-Pesa'}</h3>
+          <p className="text-sm text-muted-foreground">
+            {isCard ? 'Pay with Visa or Mastercard' : 'Pay securely via M-Pesa'}
+          </p>
         </div>
       </div>
 
@@ -85,7 +90,7 @@ export default function CardPayment({ amount, email, name, phone, onSuccess, onB
 
       <div className="flex items-center space-x-2 text-xs text-muted-foreground mb-6">
         <Lock size={14} />
-        <span>Your M-Pesa payment is processed securely by Paystack</span>
+        <span>Your payment is processed securely by Paystack</span>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
@@ -99,7 +104,7 @@ export default function CardPayment({ amount, email, name, phone, onSuccess, onB
           <span>Back</span>
         </Button>
         <Button type="button" fullWidth onClick={handlePay}>
-          Pay {formatPrice(amount)} via M-Pesa
+          Pay {formatPrice(amount)} via {isCard ? 'Card' : 'M-Pesa'}
         </Button>
       </div>
     </div>
