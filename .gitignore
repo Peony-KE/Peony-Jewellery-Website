@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# WhatsApp images (accidentally shared reference images)
+WhatsApp Image*.jpeg
+WhatsApp Image*.jpg
+
 # debug
 npm-debug.log*
 yarn-debug.log*

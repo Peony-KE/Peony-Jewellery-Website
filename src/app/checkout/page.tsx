@@ -13,7 +13,7 @@ import Button from '@/components/ui/Button';
 import CardPayment from '@/components/checkout/CardPayment';
 import { createOrder } from '@/lib/actions';
 import CityDropdown from '@/components/ui/CityDropdown';
-import { getShippingFee } from '@/data/shipping';
+import { getShippingFee, DOORSTEP_SURCHARGE } from '@/data/shipping';
 
 type PaymentMethod = 'mpesa' | 'card';
 type CheckoutStep = 'info' | 'payment' | 'confirmation';
@@ -34,6 +34,7 @@ export default function CheckoutPage() {
     landmark: '',
     city: '',
     postalCode: '',
+    deliveryType: 'standard' as 'standard' | 'doorstep',
   });
   const [orderError, setOrderError] = useState('');
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
@@ -82,6 +83,7 @@ export default function CheckoutPage() {
 
   // Synchronous — computed directly from the selected city
   const shippingFee = formData.city ? getShippingFee(formData.city) : null;
+  const doorstepSurcharge = formData.deliveryType === 'doorstep' ? DOORSTEP_SURCHARGE : 0;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -112,10 +114,10 @@ export default function CheckoutPage() {
         customer_name: `${formData.firstName} ${formData.lastName}`,
         customer_email: formData.email,
         customer_phone: formData.phone,
-        address: [formData.address, formData.houseDetails, formData.landmark].filter(Boolean).join('\n'),
+        address: [`Delivery: ${formData.deliveryType === 'doorstep' ? 'Doorstep' : 'Standard'}`, formData.address, formData.houseDetails, formData.landmark].filter(Boolean).join('\n'),
         city: formData.city,
         postal_code: formData.postalCode,
-        total: getCartTotal() + (shippingFee ?? 0),
+        total: orderTotal,
         items: orderItems,
         payment_method: paymentMethod,
         paystack_reference: paystackReference || null,
@@ -133,7 +135,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const orderTotal = getCartTotal() + (shippingFee ?? 0);
+  const orderTotal = getCartTotal() + (shippingFee ?? 0) + doorstepSurcharge;
 
   // Redirect to cart if empty
   if (items.length === 0 && step !== 'confirmation') {
@@ -345,6 +347,35 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  {/* Delivery type — always shown once a city is selected */}
+                  {formData.city && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-foreground mb-3">Delivery Type</p>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {(['standard', 'doorstep'] as const).map((type) => {
+                          const isSelected = formData.deliveryType === type;
+                          const fee = (shippingFee ?? 0) + (type === 'doorstep' ? DOORSTEP_SURCHARGE : 0);
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, deliveryType: type }))}
+                              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                                isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
+                              }`}
+                            >
+                              <p className="font-medium text-sm text-foreground capitalize">{type}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {type === 'doorstep' ? 'Delivered to your door' : 'Pickup point / bus drop-off'}
+                              </p>
+                              <p className="text-sm font-semibold text-primary mt-2">{formatPrice(fee)}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Manual form — always shown for guests, shown when 'new' selected */}
                   {(!user || savedAddresses.length === 0 || selectedAddressId === 'new') && (
                     <div className="space-y-4">
@@ -531,6 +562,12 @@ export default function CheckoutPage() {
                     }
                   </span>
                 </div>
+                {formData.deliveryType === 'doorstep' && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Doorstep delivery</span>
+                    <span className="text-foreground">+{formatPrice(DOORSTEP_SURCHARGE)}</span>
+                  </div>
+                )}
                 <div className="border-t border-border pt-3">
                   <div className="flex justify-between">
                     <span className="font-semibold text-foreground">Total</span>
