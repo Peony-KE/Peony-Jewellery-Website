@@ -30,6 +30,8 @@ export default function CheckoutPage() {
     email: '',
     phone: '',
     address: '',
+    houseDetails: '',
+    landmark: '',
     city: '',
     postalCode: '',
   });
@@ -110,7 +112,7 @@ export default function CheckoutPage() {
         customer_name: `${formData.firstName} ${formData.lastName}`,
         customer_email: formData.email,
         customer_phone: formData.phone,
-        address: formData.address,
+        address: [formData.address, formData.houseDetails, formData.landmark].filter(Boolean).join('\n'),
         city: formData.city,
         postal_code: formData.postalCode,
         total: getCartTotal() + (shippingFee ?? 0),
@@ -327,7 +329,7 @@ export default function CheckoutPage() {
                         type="button"
                         onClick={() => {
                           setSelectedAddressId('new');
-                          setFormData((prev) => ({ ...prev, address: '', city: '', postalCode: '' }));
+                          setFormData((prev) => ({ ...prev, address: '', houseDetails: '', landmark: '', city: '', postalCode: '' }));
                         }}
                         className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                           selectedAddressId === 'new'
@@ -357,6 +359,35 @@ export default function CheckoutPage() {
                           value={formData.address}
                           onChange={handleInputChange}
                           required
+                          placeholder="e.g. Kiambu Road"
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="houseDetails" className="block text-sm font-medium text-foreground mb-2">
+                          House / Apartment Details
+                        </label>
+                        <input
+                          type="text"
+                          id="houseDetails"
+                          name="houseDetails"
+                          value={formData.houseDetails}
+                          onChange={handleInputChange}
+                          placeholder="e.g. House No. 12, Green Gardens Estate, Gate 3, 2nd Floor"
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="landmark" className="block text-sm font-medium text-foreground mb-2">
+                          Nearest Landmark
+                        </label>
+                        <input
+                          type="text"
+                          id="landmark"
+                          name="landmark"
+                          value={formData.landmark}
+                          onChange={handleInputChange}
+                          placeholder="e.g. Opposite Naivas Supermarket, next to Shell petrol station"
                           className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
